@@ -5,6 +5,7 @@ import CategoryFeature from "@/components/CategoryFeature";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import PromoBanner from "@/components/PromoBanner";
 import Benefits from "@/components/Benefits";
+import Testimonials from "@/components/Testimonials";
 import Footer from "@/components/Footer";
 
 const Index = () => {
@@ -14,6 +15,7 @@ const Index = () => {
       <Hero />
       <CategoryFeature />
       <FeaturedProducts />
+      <Testimonials />
       <PromoBanner />
       <Benefits />
       <Footer />
