@@ -3,6 +3,29 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import ProductCard from "@/components/ProductCard";
+
+// Baby products
+const babyProducts = [
+  {
+    id: 3,
+    name: "Cotton Jumpsuit",
+    price: 189,
+    image: "https://images.unsplash.com/photo-1518831959646-28f35d4d8fbc?auto=format&fit=crop&w=800&q=80",
+    rating: 5,
+    category: "baby"
+  },
+  {
+    id: 9,
+    name: "Soft Cotton Pajamas",
+    price: 169,
+    originalPrice: 199,
+    image: "https://images.unsplash.com/photo-1568337356249-fa4ac5f1d270?auto=format&fit=crop&w=800&q=80",
+    isSale: true,
+    rating: 5,
+    category: "baby"
+  }
+];
 
 const Baby = () => {
   return (
@@ -16,11 +39,15 @@ const Baby = () => {
             Gentle fabrics and adorable designs for your little ones, perfect for comfort and style.
           </p>
           
-          <div className="bg-morocco-sand/20 p-8 rounded-lg text-center mb-8">
-            <h2 className="text-xl font-semibold mb-4">Coming Soon</h2>
-            <p className="mb-6">We're currently updating our baby collection with new styles.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {babyProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+          
+          <div className="text-center mt-8">
             <Button asChild>
-              <Link to="/">Return to Home Page</Link>
+              <Link to="/products">View All Products</Link>
             </Button>
           </div>
         </div>

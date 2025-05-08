@@ -2,6 +2,7 @@
 import { Heart, ShoppingBag } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { toast } from 'sonner';
 
 export interface Product {
   id: number;
@@ -12,6 +13,7 @@ export interface Product {
   isNew?: boolean;
   isSale?: boolean;
   rating: number;
+  category?: string;
 }
 
 interface ProductCardProps {
@@ -24,6 +26,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const discount = originalPrice 
     ? Math.round(((originalPrice - price) / originalPrice) * 100) 
     : 0;
+
+  const handleAddToBag = () => {
+    toast.success(`${name} added to your bag!`);
+  };
+
+  const handleAddToWishlist = () => {
+    toast.success(`${name} added to your wishlist!`);
+  };
 
   return (
     <div className="group relative flex flex-col">
@@ -50,12 +60,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <Button 
               size="sm" 
               className="bg-white hover:bg-morocco-terracotta text-morocco-navy hover:text-white rounded-full"
+              onClick={handleAddToWishlist}
             >
               <Heart className="h-4 w-4" />
             </Button>
             <Button 
               size="sm" 
               className="bg-white hover:bg-morocco-terracotta text-morocco-navy hover:text-white rounded-full flex gap-1 px-4"
+              onClick={handleAddToBag}
             >
               <ShoppingBag className="h-4 w-4" />
               <span>Add to Bag</span>

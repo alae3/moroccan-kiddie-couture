@@ -3,6 +3,45 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import ProductCard from "@/components/ProductCard";
+
+// Boys products
+const boysProducts = [
+  {
+    id: 2,
+    name: "Boys Summer T-shirt",
+    price: 129,
+    image: "https://images.unsplash.com/photo-1562157873-818bc0726f68?auto=format&fit=crop&w=800&q=80",
+    isNew: true,
+    rating: 4,
+    category: "boys"
+  },
+  {
+    id: 6,
+    name: "Lightweight Linen Shorts",
+    price: 149,
+    image: "https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?auto=format&fit=crop&w=800&q=80",
+    isNew: true,
+    rating: 4,
+    category: "boys"
+  },
+  {
+    id: 10,
+    name: "Casual Denim Set",
+    price: 289,
+    image: "https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?auto=format&fit=crop&w=800&q=80",
+    rating: 5,
+    category: "boys"
+  },
+  {
+    id: 12,
+    name: "Winter Coat with Hood",
+    price: 399,
+    image: "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?auto=format&fit=crop&w=800&q=80",
+    rating: 5,
+    category: "boys"
+  }
+];
 
 const Boys = () => {
   return (
@@ -16,11 +55,15 @@ const Boys = () => {
             Discover our stylish and comfortable boys' clothing, made with high-quality fabrics and authentic designs.
           </p>
           
-          <div className="bg-morocco-sand/20 p-8 rounded-lg text-center mb-8">
-            <h2 className="text-xl font-semibold mb-4">Coming Soon</h2>
-            <p className="mb-6">We're currently updating our boys collection with new styles.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {boysProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+          
+          <div className="text-center mt-8">
             <Button asChild>
-              <Link to="/">Return to Home Page</Link>
+              <Link to="/products">View All Products</Link>
             </Button>
           </div>
         </div>
