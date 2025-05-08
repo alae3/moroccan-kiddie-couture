@@ -1,5 +1,6 @@
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { Product } from '@/components/ProductCard';
 
 interface ProductStore {
@@ -123,7 +124,14 @@ const initialProducts: Product[] = [
   }
 ];
 
-export const useProductStore = create<ProductStore>((set) => ({
-  products: initialProducts,
-  setProducts: (products) => set({ products }),
-}));
+export const useProductStore = create<ProductStore>()(
+  persist(
+    (set) => ({
+      products: initialProducts,
+      setProducts: (products) => set({ products }),
+    }),
+    {
+      name: 'product-storage', // unique name for the localStorage key
+    }
+  )
+);
