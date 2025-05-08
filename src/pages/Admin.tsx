@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -148,16 +147,24 @@ const Admin = () => {
       // Edit existing product
       const updatedProducts = products.map(product => 
         product.id === editingProduct.id 
-          ? { ...product, ...data, id: editingProduct.id } 
+          ? { ...product, ...data } 
           : product
       );
       setProducts(updatedProducts);
       toast.success(`Product "${data.name}" updated successfully!`);
     } else {
-      // Add new product
-      const newProduct = {
-        ...data,
+      // Add new product - ensure all required fields are present
+      const newProduct: Product = {
         id: Math.max(...products.map(p => p.id)) + 1,
+        name: data.name,
+        price: data.price,
+        image: data.image,
+        rating: data.rating,
+        category: data.category,
+        // Optional fields
+        originalPrice: data.originalPrice,
+        isNew: data.isNew,
+        isSale: data.isSale
       };
       setProducts([...products, newProduct]);
       toast.success(`Product "${data.name}" added successfully!`);
