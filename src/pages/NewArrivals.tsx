@@ -1,4 +1,6 @@
 
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -8,7 +10,22 @@ import { useProductStore } from "@/store/productStore";
 
 const NewArrivals = () => {
   const { products } = useProductStore();
-  const newArrivalsProducts = products.filter(product => product.isNew);
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get("search");
+  const [displayProducts, setDisplayProducts] = useState(products.filter(product => product.isNew));
+
+  // Update displayed products when search query changes
+  useEffect(() => {
+    if (searchQuery) {
+      const filtered = products.filter(product => 
+        product.isNew && 
+        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setDisplayProducts(filtered);
+    } else {
+      setDisplayProducts(products.filter(product => product.isNew));
+    }
+  }, [searchQuery, products]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -21,11 +38,29 @@ const NewArrivals = () => {
             Check out our latest additions to the PetitMaroc collection.
           </p>
           
+          {searchQuery && (
+            <div className="mb-6">
+              <p className="text-md">
+                Search results for: <span className="font-semibold">{searchQuery}</span>
+                {' '} ({displayProducts.length} items found)
+              </p>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {newArrivalsProducts.map((product) => (
+            {displayProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
+          
+          {displayProducts.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-lg mb-4">No products found matching your search.</p>
+              <Button asChild>
+                <Link to="/new-arrivals">View All New Arrivals</Link>
+              </Button>
+            </div>
+          )}
           
           <div className="text-center mt-8">
             <Button asChild>

@@ -1,9 +1,11 @@
 
 import { Link } from 'react-router-dom';
-import { Instagram, Facebook, Twitter } from 'lucide-react';
+import { Instagram, Facebook, X } from 'lucide-react';
+import { useSocialStore } from '@/store/socialStore';
 
 const Footer = () => {
   const year = new Date().getFullYear();
+  const { socialLinks } = useSocialStore();
 
   return (
     <footer className="bg-morocco-navy text-white pt-16">
@@ -22,15 +24,21 @@ const Footer = () => {
               traditional craftsmanship with modern design for comfort and style.
             </p>
             <div className="flex space-x-4 mt-6">
-              <a href="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
-                <Instagram className="h-6 w-6" />
-              </a>
-              <a href="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
-                <Facebook className="h-6 w-6" />
-              </a>
-              <a href="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
-                <Twitter className="h-6 w-6" />
-              </a>
+              {socialLinks.instagram && (
+                <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                  <Instagram className="h-6 w-6" />
+                </a>
+              )}
+              {socialLinks.facebook && (
+                <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                  <Facebook className="h-6 w-6" />
+                </a>
+              )}
+              {socialLinks.twitter && (
+                <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                  <X className="h-6 w-6" />
+                </a>
+              )}
             </div>
           </div>
 
@@ -39,27 +47,27 @@ const Footer = () => {
             <h3 className="font-bold text-xl mb-4 text-white">Shop</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                <Link to="/girls" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   Girls
                 </Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                <Link to="/boys" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   Boys
                 </Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                <Link to="/baby" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   Baby
                 </Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                <Link to="/new-arrivals" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   New Arrivals
                 </Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                <Link to="/sale" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   Sale
                 </Link>
               </li>
@@ -71,27 +79,27 @@ const Footer = () => {
             <h3 className="font-bold text-xl mb-4 text-white">Company</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                <Link to="/about" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                <Link to="/sustainability" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   Sustainability
                 </Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                <Link to="/stores" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   Our Stores
                 </Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                <Link to="/careers" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   Careers
                 </Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                <Link to="/blog" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   Blog
                 </Link>
               </li>
@@ -103,27 +111,27 @@ const Footer = () => {
             <h3 className="font-bold text-xl mb-4 text-white">Customer Service</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                <Link to="/contact" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   Contact Us
                 </Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                <Link to="/faq" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   FAQs
                 </Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                <Link to="/shipping" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   Shipping & Returns
                 </Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                <Link to="/size-guide" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   Size Guide
                 </Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                <Link to="/track-order" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   Track Order
                 </Link>
               </li>
@@ -137,13 +145,13 @@ const Footer = () => {
             &copy; {year} PetitMaroc. All rights reserved.
           </p>
           <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-400">
-            <Link to="#" className="hover:text-morocco-terracotta transition-colors">
+            <Link to="/terms" className="hover:text-morocco-terracotta transition-colors">
               Terms of Service
             </Link>
-            <Link to="#" className="hover:text-morocco-terracotta transition-colors">
+            <Link to="/privacy" className="hover:text-morocco-terracotta transition-colors">
               Privacy Policy
             </Link>
-            <Link to="#" className="hover:text-morocco-terracotta transition-colors">
+            <Link to="/cookies" className="hover:text-morocco-terracotta transition-colors">
               Cookies Settings
             </Link>
           </div>

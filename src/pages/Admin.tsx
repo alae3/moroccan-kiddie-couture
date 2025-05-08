@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -45,6 +44,7 @@ import {
   DialogTitle,
   DialogFooter
 } from "@/components/ui/dialog";
+import { useSocialStore } from "@/store/socialStore";
 
 // Form schema for product validation
 const productSchema = z.object({
@@ -65,8 +65,9 @@ const Admin = () => {
   const { products, setProducts } = useProductStore();
   const { testimonials, setTestimonials } = useTestimonialStore();
   const { orders, updateOrderStatus } = useOrderStore();
+  const { socialLinks, updateSocialLinks } = useSocialStore();
   
-  const [currentTab, setCurrentTab] = useState<"products" | "orders" | "new" | "testimonials">("products");
+  const [currentTab, setCurrentTab] = useState<"products" | "orders" | "new" | "testimonials" | "content">("products");
   const [editingProduct, setEditingProduct] = useState<typeof products[0] | null>(null);
   const [orderStatusDialog, setOrderStatusDialog] = useState<{
     isOpen: boolean;
@@ -174,6 +175,19 @@ const Admin = () => {
     }
   };
 
+  // Handle social links update
+  const [socialLinksForm, setSocialLinksForm] = useState({
+    facebook: socialLinks.facebook,
+    instagram: socialLinks.instagram,
+    twitter: socialLinks.twitter
+  });
+
+  const handleSocialLinksUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateSocialLinks(socialLinksForm);
+    toast.success("Social media links updated successfully!");
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -182,7 +196,7 @@ const Admin = () => {
         <div className="container-custom py-12">
           <h1 className="text-3xl md:text-4xl font-bold text-morocco-navy mb-6">Admin Dashboard</h1>
           <p className="text-lg text-morocco-navy/70 mb-8">
-            Manage your products, orders, and testimonials
+            Manage your products, orders, testimonials, and website content
           </p>
           
           <div className="flex flex-col lg:flex-row gap-8">
@@ -208,6 +222,13 @@ const Admin = () => {
                 onClick={() => setCurrentTab("testimonials")}
               >
                 Testimonials
+              </Button>
+              <Button 
+                variant={currentTab === "content" ? "default" : "outline"}
+                className="w-full justify-start"
+                onClick={() => setCurrentTab("content")}
+              >
+                Website Content
               </Button>
               <Button 
                 variant={currentTab === "new" ? "default" : "outline"}
@@ -361,6 +382,53 @@ const Admin = () => {
                   initialTestimonials={testimonials} 
                   onTestimonialsChange={setTestimonials}
                 />
+              )}
+              
+              {currentTab === "content" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Website Content Management</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-8">
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">Social Media Links</h3>
+                        <form onSubmit={handleSocialLinksUpdate} className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="facebook">Facebook URL</Label>
+                              <Input 
+                                id="facebook" 
+                                value={socialLinksForm.facebook} 
+                                onChange={(e) => setSocialLinksForm({...socialLinksForm, facebook: e.target.value})}
+                                placeholder="https://facebook.com/yourbusiness"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="instagram">Instagram URL</Label>
+                              <Input 
+                                id="instagram" 
+                                value={socialLinksForm.instagram} 
+                                onChange={(e) => setSocialLinksForm({...socialLinksForm, instagram: e.target.value})}
+                                placeholder="https://instagram.com/yourbusiness"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="twitter">Twitter (X) URL</Label>
+                              <Input 
+                                id="twitter" 
+                                value={socialLinksForm.twitter} 
+                                onChange={(e) => setSocialLinksForm({...socialLinksForm, twitter: e.target.value})}
+                                placeholder="https://twitter.com/yourbusiness"
+                              />
+                            </div>
+                          </div>
+                          <Button type="submit">Update Social Links</Button>
+                        </form>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
               
               {currentTab === "new" && (
