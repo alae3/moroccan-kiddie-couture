@@ -13,19 +13,19 @@ const categories: Category[] = [
     id: 1,
     title: "Girls Collection",
     image: "https://images.unsplash.com/photo-1476234251651-f353703a034d?auto=format&fit=crop&w=800&q=80",
-    link: "#"
+    link: "/girls"
   },
   {
     id: 2,
     title: "Boys Collection",
     image: "https://images.unsplash.com/photo-1611256243212-48a16a558a4c?auto=format&fit=crop&w=800&q=80",
-    link: "#"
+    link: "/boys"
   },
   {
     id: 3,
     title: "Baby Collection",
     image: "https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&fit=crop&w=800&q=80",
-    link: "#"
+    link: "/baby"
   },
 ];
 

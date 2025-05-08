@@ -30,19 +30,19 @@ const Navbar = () => {
             <Link to="/" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
               Home
             </Link>
-            <Link to="#" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
+            <Link to="/girls" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
               Girls
             </Link>
-            <Link to="#" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
+            <Link to="/boys" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
               Boys
             </Link>
-            <Link to="#" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
+            <Link to="/baby" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
               Baby
             </Link>
-            <Link to="#" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
+            <Link to="/new-arrivals" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
               New Arrivals
             </Link>
-            <Link to="#" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
+            <Link to="/sale" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
               Sale
             </Link>
           </nav>
@@ -86,35 +86,35 @@ const Navbar = () => {
             Home
           </Link>
           <Link 
-            to="#"
+            to="/girls"
             onClick={toggleMenu}
             className="text-morocco-navy font-medium py-2 border-b border-gray-100"
           >
             Girls
           </Link>
           <Link 
-            to="#"
+            to="/boys"
             onClick={toggleMenu}
             className="text-morocco-navy font-medium py-2 border-b border-gray-100"
           >
             Boys
           </Link>
           <Link 
-            to="#"
+            to="/baby"
             onClick={toggleMenu}
             className="text-morocco-navy font-medium py-2 border-b border-gray-100"
           >
             Baby
           </Link>
           <Link 
-            to="#"
+            to="/new-arrivals"
             onClick={toggleMenu}
             className="text-morocco-navy font-medium py-2 border-b border-gray-100"
           >
             New Arrivals
           </Link>
           <Link 
-            to="#"
+            to="/sale"
             onClick={toggleMenu}
             className="text-morocco-navy font-medium py-2 border-b border-gray-100"
           >
