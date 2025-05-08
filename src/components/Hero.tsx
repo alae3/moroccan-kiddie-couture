@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface Slide {
   id: number;
@@ -10,6 +11,7 @@ interface Slide {
   cta: string;
   image: string;
   position: string;
+  link: string;
 }
 
 const slides: Slide[] = [
@@ -20,6 +22,7 @@ const slides: Slide[] = [
     cta: "Shop Now",
     image: "https://images.unsplash.com/photo-1535268647677-300dbf3d78d1?auto=format&fit=crop&w=1800&q=80",
     position: "center",
+    link: "/products"
   },
   {
     id: 2,
@@ -28,6 +31,7 @@ const slides: Slide[] = [
     cta: "Discover",
     image: "https://images.unsplash.com/photo-1565462900119-a16d2b7d9946?auto=format&fit=crop&w=1800&q=80",
     position: "bottom",
+    link: "/new-arrivals"
   },
   {
     id: 3,
@@ -36,6 +40,7 @@ const slides: Slide[] = [
     cta: "Explore Collection",
     image: "https://images.unsplash.com/photo-1596137765040-44a1c03865f3?auto=format&fit=crop&w=1800&q=80",
     position: "center",
+    link: "/products"
   },
 ];
 
@@ -89,8 +94,9 @@ const Hero = () => {
               <p className="text-xl md:text-2xl mb-8">{slide.subtitle}</p>
               <Button 
                 className="bg-morocco-terracotta hover:bg-morocco-terracotta/90 text-white px-8 py-6 text-lg rounded-md"
+                asChild
               >
-                {slide.cta}
+                <Link to={slide.link}>{slide.cta}</Link>
               </Button>
             </div>
           </div>

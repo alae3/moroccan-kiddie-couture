@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -5,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Product } from "@/components/ProductCard";
 import { toast } from "sonner";
 import { 
   Form,
@@ -34,48 +33,18 @@ import {
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-
-// All products from our store
-const initialProducts: Product[] = [
-  // Trending Products
-  {
-    id: 1,
-    name: "Moroccan Print Dress",
-    price: 249,
-    originalPrice: 299,
-    image: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&w=800&q=80",
-    isSale: true,
-    rating: 5,
-    category: "girls"
-  },
-  {
-    id: 2,
-    name: "Boys Summer T-shirt",
-    price: 129,
-    image: "https://images.unsplash.com/photo-1562157873-818bc0726f68?auto=format&fit=crop&w=800&q=80",
-    isNew: true,
-    rating: 4,
-    category: "boys"
-  },
-  {
-    id: 3,
-    name: "Cotton Jumpsuit",
-    price: 189,
-    image: "https://images.unsplash.com/photo-1518831959646-28f35d4d8fbc?auto=format&fit=crop&w=800&q=80",
-    rating: 5,
-    category: "baby"
-  },
-  {
-    id: 4,
-    name: "Traditional Kaftan",
-    price: 349,
-    originalPrice: 399,
-    image: "https://images.unsplash.com/photo-1555585466-703f14e9c14f?auto=format&fit=crop&w=800&q=80",
-    isSale: true,
-    rating: 4,
-    category: "girls"
-  }
-];
+import TestimonialsManager from "@/components/TestimonialsManager";
+import { useTestimonialStore } from "@/store/testimonialStore";
+import { useProductStore } from "@/store/productStore";
+import { Order, useOrderStore } from "@/store/orderStore";
+import { Edit } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog";
 
 // Form schema for product validation
 const productSchema = z.object({
@@ -91,41 +60,23 @@ const productSchema = z.object({
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
-// Sample orders
-const orders = [
-  { 
-    id: 1, 
-    customer: "Ahmed Benali", 
-    date: "2025-05-07", 
-    total: 398, 
-    status: "pending",
-    items: ["Moroccan Print Dress", "Boys Summer T-shirt"],
-    contact: "+212 622 345678"
-  },
-  { 
-    id: 2, 
-    customer: "Yasmine Alaoui", 
-    date: "2025-05-06", 
-    total: 189, 
-    status: "completed",
-    items: ["Cotton Jumpsuit"],
-    contact: "yasmine@example.com"
-  },
-  { 
-    id: 3, 
-    customer: "Karim Idrissi", 
-    date: "2025-05-05", 
-    total: 578, 
-    status: "processing",
-    items: ["Traditional Kaftan", "Winter Coat with Hood"],
-    contact: "+212 677 123456"
-  }
-];
-
 const Admin = () => {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [currentTab, setCurrentTab] = useState<"products" | "orders" | "new">("products");
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  // Access global stores
+  const { products, setProducts } = useProductStore();
+  const { testimonials, setTestimonials } = useTestimonialStore();
+  const { orders, updateOrderStatus } = useOrderStore();
+  
+  const [currentTab, setCurrentTab] = useState<"products" | "orders" | "new" | "testimonials">("products");
+  const [editingProduct, setEditingProduct] = useState<typeof products[0] | null>(null);
+  const [orderStatusDialog, setOrderStatusDialog] = useState<{
+    isOpen: boolean;
+    orderId: number | null;
+    status: Order['status'];
+  }>({
+    isOpen: false,
+    orderId: null,
+    status: "pending"
+  });
 
   // Form for adding/editing products
   const form = useForm<ProductFormValues>({
@@ -154,7 +105,7 @@ const Admin = () => {
       toast.success(`Product "${data.name}" updated successfully!`);
     } else {
       // Add new product - ensure all required fields are present
-      const newProduct: Product = {
+      const newProduct = {
         id: Math.max(...products.map(p => p.id)) + 1,
         name: data.name,
         price: data.price,
@@ -182,7 +133,7 @@ const Admin = () => {
   };
 
   // Edit a product
-  const handleEditProduct = (product: Product) => {
+  const handleEditProduct = (product: typeof products[0]) => {
     setEditingProduct(product);
     form.reset({
       name: product.name,
@@ -197,9 +148,30 @@ const Admin = () => {
     setCurrentTab("new");
   };
 
+  // Open order status dialog
+  const openOrderStatusDialog = (order: Order) => {
+    setOrderStatusDialog({
+      isOpen: true,
+      orderId: order.id,
+      status: order.status
+    });
+  };
+
+  // Update order status
+  const handleUpdateOrderStatus = () => {
+    if (orderStatusDialog.orderId && orderStatusDialog.status) {
+      updateOrderStatus(orderStatusDialog.orderId, orderStatusDialog.status);
+      toast.success(`Order #${orderStatusDialog.orderId} status updated to ${orderStatusDialog.status}!`);
+      setOrderStatusDialog({ isOpen: false, orderId: null, status: "pending" });
+    }
+  };
+
   // Notify about an order
   const handleNotifyOrder = (orderId: number) => {
-    toast.success(`Notification sent for order #${orderId}!`);
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      toast.success(`Notification sent to ${order.customer} at ${order.contact}!`);
+    }
   };
 
   return (
@@ -210,7 +182,7 @@ const Admin = () => {
         <div className="container-custom py-12">
           <h1 className="text-3xl md:text-4xl font-bold text-morocco-navy mb-6">Admin Dashboard</h1>
           <p className="text-lg text-morocco-navy/70 mb-8">
-            Manage your products and orders
+            Manage your products, orders, and testimonials
           </p>
           
           <div className="flex flex-col lg:flex-row gap-8">
@@ -229,6 +201,13 @@ const Admin = () => {
                 onClick={() => setCurrentTab("orders")}
               >
                 Orders
+              </Button>
+              <Button 
+                variant={currentTab === "testimonials" ? "default" : "outline"}
+                className="w-full justify-start"
+                onClick={() => setCurrentTab("testimonials")}
+              >
+                Testimonials
               </Button>
               <Button 
                 variant={currentTab === "new" ? "default" : "outline"}
@@ -342,19 +321,31 @@ const Admin = () => {
                                     ? "bg-green-100 text-green-800" 
                                     : order.status === "processing"
                                       ? "bg-blue-100 text-blue-800"
-                                      : "bg-yellow-100 text-yellow-800"
+                                      : order.status === "cancelled"
+                                        ? "bg-red-100 text-red-800"
+                                        : "bg-yellow-100 text-yellow-800"
                                 }`}>
                                   {order.status}
                                 </span>
                               </TableCell>
                               <TableCell>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => handleNotifyOrder(order.id)}
-                                >
-                                  Contact
-                                </Button>
+                                <div className="flex gap-2">
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => openOrderStatusDialog(order)}
+                                  >
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Status
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => handleNotifyOrder(order.id)}
+                                  >
+                                    Contact
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -363,6 +354,13 @@ const Admin = () => {
                     </div>
                   </CardContent>
                 </Card>
+              )}
+              
+              {currentTab === "testimonials" && (
+                <TestimonialsManager 
+                  initialTestimonials={testimonials} 
+                  onTestimonialsChange={setTestimonials}
+                />
               )}
               
               {currentTab === "new" && (
@@ -539,6 +537,45 @@ const Admin = () => {
           </div>
         </div>
       </main>
+      
+      {/* Order Status Dialog */}
+      <Dialog 
+        open={orderStatusDialog.isOpen} 
+        onOpenChange={(open) => !open && setOrderStatusDialog(prev => ({ ...prev, isOpen: false }))}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Update Order Status</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="status">New Status</Label>
+            <Select
+              value={orderStatusDialog.status}
+              onValueChange={(value: Order['status']) => 
+                setOrderStatusDialog(prev => ({ ...prev, status: value }))
+              }
+            >
+              <SelectTrigger className="w-full mt-2">
+                <SelectValue placeholder="Select a status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="processing">Processing</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOrderStatusDialog(prev => ({ ...prev, isOpen: false }))}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateOrderStatus}>
+              Update Status
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       <Footer />
     </div>

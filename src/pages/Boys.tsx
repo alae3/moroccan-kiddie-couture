@@ -4,46 +4,12 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import ProductCard from "@/components/ProductCard";
-
-// Boys products
-const boysProducts = [
-  {
-    id: 2,
-    name: "Boys Summer T-shirt",
-    price: 129,
-    image: "https://images.unsplash.com/photo-1562157873-818bc0726f68?auto=format&fit=crop&w=800&q=80",
-    isNew: true,
-    rating: 4,
-    category: "boys"
-  },
-  {
-    id: 6,
-    name: "Lightweight Linen Shorts",
-    price: 149,
-    image: "https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?auto=format&fit=crop&w=800&q=80",
-    isNew: true,
-    rating: 4,
-    category: "boys"
-  },
-  {
-    id: 10,
-    name: "Casual Denim Set",
-    price: 289,
-    image: "https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?auto=format&fit=crop&w=800&q=80",
-    rating: 5,
-    category: "boys"
-  },
-  {
-    id: 12,
-    name: "Winter Coat with Hood",
-    price: 399,
-    image: "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?auto=format&fit=crop&w=800&q=80",
-    rating: 5,
-    category: "boys"
-  }
-];
+import { useProductStore } from "@/store/productStore";
 
 const Boys = () => {
+  const { products } = useProductStore();
+  const boysProducts = products.filter(product => product.category === "boys");
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
