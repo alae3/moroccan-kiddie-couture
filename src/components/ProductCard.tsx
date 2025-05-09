@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { useCartStore } from '@/store/cartStore';
 
 export interface Product {
   id: number;
@@ -15,6 +16,7 @@ export interface Product {
   isSale?: boolean;
   rating: number;
   category?: string;
+  description?: string;
 }
 
 interface ProductCardProps {
@@ -23,6 +25,7 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { id, name, price, originalPrice, image, isNew, isSale, rating } = product;
+  const { addItem } = useCartStore();
   
   const discount = originalPrice 
     ? Math.round(((originalPrice - price) / originalPrice) * 100) 
@@ -31,6 +34,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const handleAddToBag = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    addItem(product);
     toast.success(`${name} added to your bag!`);
   };
 

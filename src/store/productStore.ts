@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Product } from '@/components/ProductCard';
@@ -6,6 +5,7 @@ import { Product } from '@/components/ProductCard';
 interface ProductStore {
   products: Product[];
   setProducts: (products: Product[]) => void;
+  updateProduct: (updatedProduct: Product) => void;
 }
 
 // Initial products from our store
@@ -19,7 +19,8 @@ const initialProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&w=800&q=80",
     isSale: true,
     rating: 5,
-    category: "girls"
+    category: "girls",
+    description: "This beautiful Moroccan print dress is made with high-quality cotton fabric, perfect for your little girl's comfort and style. The traditional patterns are combined with modern design elements."
   },
   {
     id: 2,
@@ -28,7 +29,8 @@ const initialProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1562157873-818bc0726f68?auto=format&fit=crop&w=800&q=80",
     isNew: true,
     rating: 4,
-    category: "boys"
+    category: "boys",
+    description: "Lightweight and breathable boys T-shirt, perfect for summer days. Made with organic cotton and featuring a playful Moroccan-inspired design."
   },
   {
     id: 3,
@@ -129,6 +131,11 @@ export const useProductStore = create<ProductStore>()(
     (set) => ({
       products: initialProducts,
       setProducts: (products) => set({ products }),
+      updateProduct: (updatedProduct) => set((state) => ({
+        products: state.products.map(product => 
+          product.id === updatedProduct.id ? updatedProduct : product
+        )
+      })),
     }),
     {
       name: 'product-storage', // unique name for the localStorage key
