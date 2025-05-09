@@ -125,13 +125,18 @@ const Cart = () => {
                   </div>
                   
                   <div className="space-y-4">
-                    <Button className="w-full bg-morocco-navy hover:bg-morocco-terracotta">
-                      Proceed to Checkout
+                    <Button asChild className="w-full bg-morocco-navy hover:bg-morocco-terracotta">
+                      <Link to="/checkout">Proceed to Checkout</Link>
                     </Button>
                     
-                    <Link to="/track-order" className="block text-center text-morocco-navy hover:text-morocco-terracotta">
-                      Track your order
-                    </Link>
+                    <div className="flex justify-between">
+                      <Link to="/size-guide" className="text-center text-morocco-navy hover:text-morocco-terracotta">
+                        Size Guide
+                      </Link>
+                      <Link to="/shipping" className="text-center text-morocco-navy hover:text-morocco-terracotta">
+                        Shipping & Returns
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>

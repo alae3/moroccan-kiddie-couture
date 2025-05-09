@@ -15,8 +15,8 @@ const Footer = () => {
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center">
               <span className="font-heading text-2xl font-bold tracking-tight">
-                <span className="text-morocco-terracotta">Petit</span>
-                <span className="text-white">Maroc</span>
+                <span className="text-morocco-terracotta">Najih</span>
+                <span className="text-white">Kids</span>
               </span>
             </Link>
             <p className="mt-4 text-gray-300 max-w-sm">
@@ -99,8 +99,8 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/blog" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
-                  Blog
+                <Link to="/faq" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                  FAQ
                 </Link>
               </li>
             </ul>
@@ -142,7 +142,7 @@ const Footer = () => {
         {/* Bottom section */}
         <div className="border-t border-gray-700 py-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400 text-sm mb-4 md:mb-0">
-            &copy; {year} PetitMaroc. All rights reserved.
+            &copy; {year} NajihKids. All rights reserved.
           </p>
           <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-400">
             <Link to="/terms" className="hover:text-morocco-terracotta transition-colors">
