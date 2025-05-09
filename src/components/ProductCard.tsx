@@ -3,6 +3,7 @@ import { Heart, ShoppingBag } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 export interface Product {
   id: number;
@@ -21,22 +22,26 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const { name, price, originalPrice, image, isNew, isSale, rating } = product;
+  const { id, name, price, originalPrice, image, isNew, isSale, rating } = product;
   
   const discount = originalPrice 
     ? Math.round(((originalPrice - price) / originalPrice) * 100) 
     : 0;
 
-  const handleAddToBag = () => {
+  const handleAddToBag = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     toast.success(`${name} added to your bag!`);
   };
 
-  const handleAddToWishlist = () => {
+  const handleAddToWishlist = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     toast.success(`${name} added to your wishlist!`);
   };
 
   return (
-    <div className="group relative flex flex-col">
+    <Link to={`/product/${id}`} className="group relative flex flex-col">
       {/* Product image */}
       <div className="aspect-square overflow-hidden rounded-lg bg-gray-100 mb-4 relative">
         <img 
@@ -106,7 +111,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           ))}
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 
