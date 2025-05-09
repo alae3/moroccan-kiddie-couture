@@ -5,8 +5,10 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, MapPin, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
+import { useMessageStore } from "@/store/messageStore";
 
 const Contact = () => {
+  const { addMessage } = useMessageStore();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -22,7 +24,14 @@ const Contact = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // In a real app, this would send the data to the backend
+    // Add message to store
+    addMessage({
+      name: formData.name,
+      email: formData.email,
+      subject: formData.subject,
+      message: formData.message
+    });
+    
     toast.success("Message sent successfully! We'll get back to you soon.");
     setFormData({
       name: "",

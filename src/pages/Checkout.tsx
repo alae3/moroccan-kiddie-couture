@@ -6,9 +6,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useOrderStore } from "@/store/orderStore";
 
 const Checkout = () => {
   const { items, getTotal, clearCart } = useCartStore();
+  const { addOrder } = useOrderStore();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: "",
@@ -27,10 +29,20 @@ const Checkout = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // In a real app, this would send the order to the backend
-    toast.success("Order placed successfully!");
+    // Create a new order
+    const newOrder = addOrder({
+      customer: formData.fullName,
+      date: new Date().toISOString().split('T')[0], // Format: YYYY-MM-DD
+      total: getTotal(),
+      status: "pending",
+      items: items.map(item => `${item.name} (x${item.quantity})`),
+      contact: formData.email || formData.phone
+    });
+    
+    // Clear cart and redirect to track order page
+    toast.success(`Order placed successfully! Your order number is ${newOrder.orderNumber}`);
     clearCart();
-    navigate("/track-order");
+    navigate(`/track-order?order=${newOrder.orderNumber}`);
   };
 
   if (items.length === 0) {

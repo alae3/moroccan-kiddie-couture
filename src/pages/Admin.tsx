@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -36,15 +37,18 @@ import TestimonialsManager from "@/components/TestimonialsManager";
 import { useTestimonialStore } from "@/store/testimonialStore";
 import { useProductStore } from "@/store/productStore";
 import { Order, useOrderStore } from "@/store/orderStore";
-import { Edit } from "lucide-react";
+import { Edit, Eye, Mail, MessageSquare, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter
+  DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { useSocialStore } from "@/store/socialStore";
+import { useMessageStore, Message } from "@/store/messageStore";
+import { Badge } from "@/components/ui/badge";
 
 // Form schema for product validation
 const productSchema = z.object({
@@ -66,8 +70,9 @@ const Admin = () => {
   const { testimonials, setTestimonials } = useTestimonialStore();
   const { orders, updateOrderStatus } = useOrderStore();
   const { socialLinks, updateSocialLinks } = useSocialStore();
+  const { messages, markAsRead, deleteMessage } = useMessageStore();
   
-  const [currentTab, setCurrentTab] = useState<"products" | "orders" | "new" | "testimonials" | "content">("products");
+  const [currentTab, setCurrentTab] = useState<"products" | "orders" | "new" | "testimonials" | "content" | "messages">("orders");
   const [editingProduct, setEditingProduct] = useState<typeof products[0] | null>(null);
   const [orderStatusDialog, setOrderStatusDialog] = useState<{
     isOpen: boolean;
@@ -78,6 +83,17 @@ const Admin = () => {
     orderId: null,
     status: "pending"
   });
+
+  const [messageViewDialog, setMessageViewDialog] = useState<{
+    isOpen: boolean;
+    message: Message | null;
+  }>({
+    isOpen: false,
+    message: null
+  });
+
+  // Count unread messages
+  const unreadMessageCount = messages.filter(msg => !msg.read).length;
 
   // Form for adding/editing products
   const form = useForm<ProductFormValues>({
@@ -167,6 +183,25 @@ const Admin = () => {
     }
   };
 
+  // View message
+  const handleViewMessage = (message: Message) => {
+    // Mark as read when viewing
+    if (!message.read) {
+      markAsRead(message.id);
+    }
+    
+    setMessageViewDialog({
+      isOpen: true,
+      message: message
+    });
+  };
+
+  // Delete message
+  const handleDeleteMessage = (id: number) => {
+    deleteMessage(id);
+    toast.success("Message deleted successfully");
+  };
+
   // Notify about an order
   const handleNotifyOrder = (orderId: number) => {
     const order = orders.find(o => o.id === orderId);
@@ -215,6 +250,16 @@ const Admin = () => {
                 onClick={() => setCurrentTab("orders")}
               >
                 Orders
+              </Button>
+              <Button 
+                variant={currentTab === "messages" ? "default" : "outline"}
+                className="w-full justify-start flex items-center"
+                onClick={() => setCurrentTab("messages")}
+              >
+                <span>Messages</span>
+                {unreadMessageCount > 0 && (
+                  <Badge variant="destructive" className="ml-2">{unreadMessageCount}</Badge>
+                )}
               </Button>
               <Button 
                 variant={currentTab === "testimonials" ? "default" : "outline"}
@@ -319,7 +364,7 @@ const Admin = () => {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Order ID</TableHead>
+                            <TableHead>Order #</TableHead>
                             <TableHead>Customer</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead>Items</TableHead>
@@ -331,7 +376,7 @@ const Admin = () => {
                         <TableBody>
                           {orders.map((order) => (
                             <TableRow key={order.id}>
-                              <TableCell>#{order.id}</TableCell>
+                              <TableCell>{order.orderNumber}</TableCell>
                               <TableCell>{order.customer}</TableCell>
                               <TableCell>{order.date}</TableCell>
                               <TableCell>{order.items.join(", ")}</TableCell>
@@ -372,6 +417,84 @@ const Admin = () => {
                           ))}
                         </TableBody>
                       </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {currentTab === "messages" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Customer Messages</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      {messages.length > 0 ? (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Status</TableHead>
+                              <TableHead>From</TableHead>
+                              <TableHead>Subject</TableHead>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {messages.map((message) => (
+                              <TableRow key={message.id} className={!message.read ? "bg-blue-50" : ""}>
+                                <TableCell>
+                                  {!message.read ? (
+                                    <Badge variant="default" className="bg-blue-500">New</Badge>
+                                  ) : (
+                                    <Badge variant="outline">Read</Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <div>
+                                    <div className="font-medium">{message.name}</div>
+                                    <div className="text-sm text-gray-500">{message.email}</div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>{message.subject}</TableCell>
+                                <TableCell>{message.date}</TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      onClick={() => handleViewMessage(message)}
+                                    >
+                                      <Eye className="h-4 w-4 mr-1" />
+                                      View
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      onClick={() => window.location.href = `mailto:${message.email}`}
+                                    >
+                                      <Mail className="h-4 w-4 mr-1" />
+                                      Reply
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="destructive"
+                                      onClick={() => handleDeleteMessage(message.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      ) : (
+                        <div className="text-center py-8">
+                          <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                          <p className="text-gray-500">No messages yet</p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -640,6 +763,46 @@ const Admin = () => {
             </Button>
             <Button onClick={handleUpdateOrderStatus}>
               Update Status
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Message View Dialog */}
+      <Dialog
+        open={messageViewDialog.isOpen}
+        onOpenChange={(open) => !open && setMessageViewDialog({ isOpen: false, message: null })}
+      >
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>{messageViewDialog.message?.subject}</DialogTitle>
+            <DialogDescription>
+              From: {messageViewDialog.message?.name} ({messageViewDialog.message?.email})
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="bg-gray-50 p-4 rounded-md min-h-[100px] whitespace-pre-wrap">
+              {messageViewDialog.message?.message}
+            </div>
+            <div className="text-sm text-gray-500 mt-4">
+              Received on: {messageViewDialog.message?.date}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setMessageViewDialog({ isOpen: false, message: null })}
+            >
+              Close
+            </Button>
+            <Button 
+              onClick={() => {
+                if (messageViewDialog.message) {
+                  window.location.href = `mailto:${messageViewDialog.message.email}?subject=Re: ${messageViewDialog.message.subject}`;
+                }
+              }}
+            >
+              Reply via Email
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,71 +1,74 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useOrderStore, Order } from "@/store/orderStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Package, 
-  PackageCheck, 
-  PackageX, 
-  Truck 
-} from "lucide-react";
+import { toast } from "sonner";
+import { useOrderStore, Order } from "@/store/orderStore";
+import { Package, CheckCircle, Clock, AlertCircle, XCircle } from "lucide-react";
 
 const TrackOrder = () => {
-  const [orderId, setOrderId] = useState("");
-  const [searchedOrder, setSearchedOrder] = useState<Order | null>(null);
-  const [error, setError] = useState("");
-  const { orders, updateOrderStatus } = useOrderStore();
+  const [searchParams] = useSearchParams();
+  const initialOrderNumber = searchParams.get("order") || "";
+  
+  const [orderNumber, setOrderNumber] = useState(initialOrderNumber);
+  const [trackedOrder, setTrackedOrder] = useState<Order | null>(null);
+  
+  const { orders, getOrderByNumber } = useOrderStore();
 
-  const handleSearch = () => {
-    const id = parseInt(orderId);
-    if (isNaN(id)) {
-      setError("Please enter a valid order number");
-      setSearchedOrder(null);
+  useEffect(() => {
+    // If order number is provided in URL, try to track it automatically
+    if (initialOrderNumber) {
+      handleTrackOrder();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialOrderNumber]);
+
+  const handleTrackOrder = () => {
+    if (!orderNumber.trim()) {
+      toast.error("Please enter an order number");
       return;
     }
 
-    const order = orders.find(o => o.id === id);
+    const order = getOrderByNumber(orderNumber);
     if (order) {
-      setSearchedOrder(order);
-      setError("");
+      setTrackedOrder(order);
+      toast.success(`Order ${order.orderNumber} found!`);
     } else {
-      setError("Order not found. Please check your order number and try again.");
-      setSearchedOrder(null);
+      setTrackedOrder(null);
+      toast.error("Order not found. Please check the order number and try again.");
     }
   };
 
-  const getStatusIcon = (status: Order["status"]) => {
+  // Helper function for status icon
+  const getStatusIcon = (status: Order['status']) => {
+    switch (status) {
+      case "completed":
+        return <CheckCircle className="h-12 w-12 text-green-500" />;
+      case "processing":
+        return <Clock className="h-12 w-12 text-blue-500" />;
+      case "cancelled":
+        return <XCircle className="h-12 w-12 text-red-500" />;
+      default:
+        return <AlertCircle className="h-12 w-12 text-amber-500" />;
+    }
+  };
+
+  // Helper function for status description
+  const getStatusDescription = (status: Order['status']) => {
     switch (status) {
       case "pending":
-        return <Package className="h-8 w-8 text-yellow-500" />;
+        return "Your order has been received and is waiting to be processed.";
       case "processing":
-        return <Truck className="h-8 w-8 text-blue-500" />;
+        return "We're preparing your items for shipment.";
       case "completed":
-        return <PackageCheck className="h-8 w-8 text-green-500" />;
+        return "Your order has been shipped and is on its way to you!";
       case "cancelled":
-        return <PackageX className="h-8 w-8 text-red-500" />;
-    }
-  };
-
-  const getStatusText = (status: Order["status"]) => {
-    switch (status) {
-      case "pending":
-        return "Your order has been received and is pending processing.";
-      case "processing":
-        return "Your order is being processed and prepared for shipping.";
-      case "completed":
-        return "Your order has been delivered successfully.";
-      case "cancelled":
-        return "This order has been cancelled.";
-    }
-  };
-
-  const handleStatusChange = (newStatus: Order["status"]) => {
-    if (searchedOrder) {
-      updateOrderStatus(searchedOrder.id, newStatus);
-      setSearchedOrder({...searchedOrder, status: newStatus});
+        return "This order has been cancelled. Please contact us for more information.";
+      default:
+        return "";
     }
   };
 
@@ -77,103 +80,82 @@ const TrackOrder = () => {
         <div className="container-custom py-12">
           <h1 className="text-3xl md:text-4xl font-bold text-morocco-navy mb-6">Track Your Order</h1>
           
-          <div className="bg-white rounded-lg shadow-sm p-8 mb-8">
-            <p className="text-gray-600 mb-4">
-              Enter your order number to track the status of your delivery.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Input 
-                type="text" 
-                placeholder="Enter order number" 
-                value={orderId}
-                onChange={(e) => setOrderId(e.target.value)}
-                className="flex-1"
-              />
-              <Button onClick={handleSearch}>
-                Track Order
-              </Button>
-            </div>
-            
-            {error && (
-              <p className="text-red-500 mt-2">{error}</p>
-            )}
-          </div>
-          
-          {searchedOrder && (
-            <div className="bg-white rounded-lg shadow-sm p-8">
-              <h2 className="text-2xl font-semibold mb-4">Order #{searchedOrder.id}</h2>
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+              <div className="flex items-center mb-6 gap-2">
+                <Package className="h-6 w-6 text-morocco-navy" />
+                <h2 className="text-2xl font-bold">Order Tracking</h2>
+              </div>
               
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div>
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium mb-2">Order Details</h3>
-                    <div className="space-y-2 text-gray-600">
-                      <p><span className="font-medium">Customer:</span> {searchedOrder.customer}</p>
-                      <p><span className="font-medium">Date:</span> {searchedOrder.date}</p>
-                      <p><span className="font-medium">Total:</span> {searchedOrder.total.toFixed(2)} MAD</p>
-                      <p><span className="font-medium">Contact:</span> {searchedOrder.contact}</p>
+              <div className="flex gap-4 mb-6">
+                <Input
+                  placeholder="Enter your order number (e.g., NK-10001)"
+                  value={orderNumber}
+                  onChange={(e) => setOrderNumber(e.target.value)}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleTrackOrder}
+                  className="bg-morocco-navy hover:bg-morocco-terracotta"
+                >
+                  Track
+                </Button>
+              </div>
+              
+              {trackedOrder ? (
+                <div className="space-y-6">
+                  <div className="p-4 border rounded-lg bg-gray-50">
+                    <h3 className="font-medium text-lg mb-2">Order Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-500">Order Number</p>
+                        <p className="font-medium">{trackedOrder.orderNumber}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Order Date</p>
+                        <p className="font-medium">{trackedOrder.date}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Customer</p>
+                        <p className="font-medium">{trackedOrder.customer}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Total</p>
+                        <p className="font-medium">{trackedOrder.total} MAD</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-6 p-6 border rounded-lg">
+                    {getStatusIcon(trackedOrder.status)}
+                    <div>
+                      <h3 className="text-lg font-medium capitalize mb-1">{trackedOrder.status}</h3>
+                      <p className="text-gray-600">{getStatusDescription(trackedOrder.status)}</p>
                     </div>
                   </div>
                   
                   <div>
-                    <h3 className="text-lg font-medium mb-2">Items</h3>
-                    <ul className="list-disc pl-5 text-gray-600">
-                      {searchedOrder.items.map((item, index) => (
-                        <li key={index}>{item}</li>
+                    <h3 className="font-medium text-lg mb-2">Items in your order</h3>
+                    <ul className="list-disc ml-6">
+                      {trackedOrder.items.map((item, idx) => (
+                        <li key={idx} className="mb-1">{item}</li>
                       ))}
                     </ul>
                   </div>
                 </div>
-                
-                <div>
-                  <div className="flex items-center mb-4">
-                    {getStatusIcon(searchedOrder.status)}
-                    <div className="ml-4">
-                      <h3 className="text-lg font-medium capitalize">{searchedOrder.status}</h3>
-                      <p className="text-gray-600">{getStatusText(searchedOrder.status)}</p>
-                    </div>
-                  </div>
-                  
-                  {/* Admin controls for changing status */}
-                  <div className="mt-8 p-4 border rounded-lg bg-gray-50">
-                    <h4 className="font-medium mb-4">Admin: Update Order Status</h4>
-                    <div className="flex flex-wrap gap-2">
-                      <Button 
-                        variant={searchedOrder.status === "pending" ? "default" : "outline"}
-                        onClick={() => handleStatusChange("pending")}
-                        size="sm"
-                      >
-                        Pending
-                      </Button>
-                      <Button 
-                        variant={searchedOrder.status === "processing" ? "default" : "outline"}
-                        onClick={() => handleStatusChange("processing")}
-                        size="sm"
-                      >
-                        Processing
-                      </Button>
-                      <Button 
-                        variant={searchedOrder.status === "completed" ? "default" : "outline"}
-                        onClick={() => handleStatusChange("completed")}
-                        size="sm"
-                      >
-                        Completed
-                      </Button>
-                      <Button 
-                        variant={searchedOrder.status === "cancelled" ? "default" : "outline"}
-                        onClick={() => handleStatusChange("cancelled")}
-                        size="sm"
-                        className={searchedOrder.status === "cancelled" ? "bg-red-500 hover:bg-red-600 text-white" : "hover:bg-red-500 hover:text-white"}
-                      >
-                        Cancelled
-                      </Button>
-                    </div>
-                  </div>
+              ) : (
+                <div className="text-center py-6">
+                  <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-medium text-gray-500 mb-2">
+                    Enter your order number to track your package
+                  </h3>
+                  <p className="text-gray-500">
+                    You can find your order number in the confirmation email we sent you
+                  </p>
                 </div>
-              </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </main>
       
