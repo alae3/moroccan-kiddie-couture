@@ -1,5 +1,6 @@
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export interface Order {
   id: number;
@@ -48,13 +49,20 @@ const initialOrders: Order[] = [
   }
 ];
 
-export const useOrderStore = create<OrderStore>((set) => ({
-  orders: initialOrders,
-  setOrders: (orders) => set({ orders }),
-  updateOrderStatus: (id, status) => 
-    set((state) => ({
-      orders: state.orders.map(order => 
-        order.id === id ? { ...order, status } : order
-      )
-    })),
-}));
+export const useOrderStore = create<OrderStore>()(
+  persist(
+    (set) => ({
+      orders: initialOrders,
+      setOrders: (orders) => set({ orders }),
+      updateOrderStatus: (id, status) => 
+        set((state) => ({
+          orders: state.orders.map(order => 
+            order.id === id ? { ...order, status } : order
+          )
+        })),
+    }),
+    {
+      name: 'order-storage', // unique name for the localStorage key
+    }
+  )
+);

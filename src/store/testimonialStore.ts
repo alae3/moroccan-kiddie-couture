@@ -1,5 +1,6 @@
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { Testimonial } from '@/components/TestimonialsManager';
 
 interface TestimonialStore {
@@ -34,7 +35,14 @@ const initialTestimonials: Testimonial[] = [
   }
 ];
 
-export const useTestimonialStore = create<TestimonialStore>((set) => ({
-  testimonials: initialTestimonials,
-  setTestimonials: (testimonials) => set({ testimonials }),
-}));
+export const useTestimonialStore = create<TestimonialStore>()(
+  persist(
+    (set) => ({
+      testimonials: initialTestimonials,
+      setTestimonials: (testimonials) => set({ testimonials }),
+    }),
+    {
+      name: 'testimonial-storage', // unique name for the localStorage key
+    }
+  )
+);
