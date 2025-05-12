@@ -4,8 +4,6 @@ const Testimonials = () => {
   const {
     testimonials
   } = useTestimonialStore();
-  return <section className="py-16 bg-morocco-blue/5">
-      
-    </section>;
+  return;
 };
 export default Testimonials;
