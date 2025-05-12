@@ -78,11 +78,7 @@ const Footer = () => {
                   Sustainability
                 </Link>
               </li>
-              <li>
-                <Link to="/stores" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
-                  Our Stores
-                </Link>
-              </li>
+              
               <li>
                 <Link to="/careers" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   Careers
@@ -114,9 +110,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/size-guide" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
-                  Size Guide
-                </Link>
+                
               </li>
               <li>
                 <Link to="/track-order" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
