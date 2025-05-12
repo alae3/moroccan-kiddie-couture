@@ -135,15 +135,9 @@ const Footer = () => {
             &copy; {year} NajihKids. All rights reserved.
           </p>
           <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-400">
-            <Link to="/terms" className="hover:text-morocco-terracotta transition-colors">
-              Terms of Service
-            </Link>
-            <Link to="/privacy" className="hover:text-morocco-terracotta transition-colors">
-              Privacy Policy
-            </Link>
-            <Link to="/cookies" className="hover:text-morocco-terracotta transition-colors">
-              Cookies Settings
-            </Link>
+            
+            
+            
           </div>
         </div>
       </div>
