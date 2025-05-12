@@ -61,8 +61,11 @@ const Navbar = () => {
             <Link to="/new-arrivals" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
               New Arrivals
             </Link>
-            <Link to="/sale" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
-              Sale
+            <Link to="/about" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
+              About Us
+            </Link>
+            <Link to="/sustainability" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
+              Sustainability
             </Link>
           </nav>
 
@@ -161,11 +164,32 @@ const Navbar = () => {
             New Arrivals
           </Link>
           <Link 
-            to="/sale"
+            to="/about"
             onClick={toggleMenu}
             className="text-morocco-navy font-medium py-2 border-b border-gray-100"
           >
-            Sale
+            About Us
+          </Link>
+          <Link 
+            to="/sustainability"
+            onClick={toggleMenu}
+            className="text-morocco-navy font-medium py-2 border-b border-gray-100"
+          >
+            Sustainability
+          </Link>
+          <Link 
+            to="/stores"
+            onClick={toggleMenu}
+            className="text-morocco-navy font-medium py-2 border-b border-gray-100"
+          >
+            Our Stores
+          </Link>
+          <Link 
+            to="/careers"
+            onClick={toggleMenu}
+            className="text-morocco-navy font-medium py-2 border-b border-gray-100"
+          >
+            Careers
           </Link>
           <div className="py-2">
             <form onSubmit={handleSearch} className="relative">
