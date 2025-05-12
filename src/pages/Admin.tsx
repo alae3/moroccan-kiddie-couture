@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,7 +37,7 @@ import { useForm } from "react-hook-form";
 import { useTestimonialStore } from "@/store/testimonialStore";
 import { useProductStore } from "@/store/productStore";
 import { Order, useOrderStore } from "@/store/orderStore";
-import { Edit, Eye, Mail, MessageSquare, Trash2, Upload, Image, Settings } from "lucide-react";
+import { Edit, Eye, Mail, MessageSquare, Trash2, Upload, Image, Settings, LogOut, Users, FileText, Truck } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +56,9 @@ import {
   TabsTrigger 
 } from "@/components/ui/tabs";
 import { useContentStore, WebsiteContent, WebsiteImages } from "@/store/contentStore";
+import { useAuthStore } from "@/store/authStore";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 // Form schema for product validation
 const productSchema = z.object({
@@ -81,8 +85,75 @@ const contentSchema = z.object({
   footerText: z.string(),
 });
 
+// Pages content schema
+const pageContentSchema = z.object({
+  title: z.string().min(3, { message: "Title must be at least 3 characters" }),
+  content: z.string().min(10, { message: "Content must be at least 10 characters" }),
+});
+
 type ProductFormValues = z.infer<typeof productSchema>;
 type ContentFormValues = z.infer<typeof contentSchema>;
+type PageContentFormValues = z.infer<typeof pageContentSchema>;
+
+// Page content store
+interface PageContent {
+  title: string;
+  content: string;
+}
+
+interface PageContentStore {
+  about: PageContent;
+  sustainability: PageContent;
+  careers: PageContent;
+  shipping: PageContent;
+  contact: PageContent;
+}
+
+// Initial page content
+const initialPageContent: PageContentStore = {
+  about: {
+    title: "Our Story",
+    content: "Founded in Marrakech, NajihKids blends Moroccan artisanal techniques with contemporary designs, creating unique children's clothing that celebrates heritage while embracing modern style."
+  },
+  sustainability: {
+    title: "Sustainability",
+    content: "At NajihKids, sustainability is at the heart of everything we do. We believe in creating clothing that not only looks good but does good for the planet and the people involved in making our products."
+  },
+  careers: {
+    title: "Join Our Team",
+    content: "We're always looking for passionate individuals to join our growing team. Check out our current openings below and become part of our story."
+  },
+  shipping: {
+    title: "Shipping & Returns",
+    content: "We offer free shipping on all orders over 500 MAD. Returns are accepted within 30 days of purchase. Please see our full policy for details."
+  },
+  contact: {
+    title: "Get in Touch",
+    content: "Have questions about our products? Contact us directly or use the form below."
+  }
+};
+
+// Create a store for page content
+const usePageContentStore = create<{
+  pages: PageContentStore;
+  updatePage: (page: keyof PageContentStore, content: PageContent) => void;
+}>()(
+  persist(
+    (set) => ({
+      pages: initialPageContent,
+      updatePage: (page, content) =>
+        set((state) => ({
+          pages: {
+            ...state.pages,
+            [page]: content
+          }
+        }))
+    }),
+    {
+      name: 'page-content-storage'
+    }
+  )
+);
 
 const Admin = () => {
   // Access global stores
@@ -92,9 +163,13 @@ const Admin = () => {
   const { socialLinks, updateSocialLinks } = useSocialStore();
   const { messages, markAsRead, deleteMessage } = useMessageStore();
   const { textContent, images, updateTextContent, updateImage } = useContentStore();
+  const { pages, updatePage } = usePageContentStore();
+  const { logout } = useAuthStore();
+  const navigate = useNavigate();
   
-  const [currentTab, setCurrentTab] = useState<"products" | "orders" | "new" | "testimonials" | "content" | "messages" | "websiteContent">("orders");
+  const [currentTab, setCurrentTab] = useState<"products" | "orders" | "new" | "testimonials" | "content" | "messages" | "websiteContent" | "pageContent">("orders");
   const [editingProduct, setEditingProduct] = useState<typeof products[0] | null>(null);
+  const [currentPage, setCurrentPage] = useState<keyof PageContentStore>("about");
   const [orderStatusDialog, setOrderStatusDialog] = useState<{
     isOpen: boolean;
     orderId: number | null;
@@ -144,6 +219,15 @@ const Admin = () => {
     defaultValues: textContent
   });
 
+  // Form for page content
+  const pageContentForm = useForm<PageContentFormValues>({
+    resolver: zodResolver(pageContentSchema),
+    defaultValues: {
+      title: pages[currentPage].title,
+      content: pages[currentPage].content
+    }
+  });
+
   // Handle product form submission
   const onProductSubmit = (data: ProductFormValues) => {
     if (editingProduct) {
@@ -182,6 +266,24 @@ const Admin = () => {
   const onContentSubmit = (data: ContentFormValues) => {
     updateTextContent(data);
     toast.success("Website content updated successfully!");
+  };
+
+  // Handle page content submission
+  const onPageContentSubmit = (data: PageContentFormValues) => {
+    updatePage(currentPage, {
+      title: data.title,
+      content: data.content
+    });
+    toast.success(`${currentPage.charAt(0).toUpperCase() + currentPage.slice(1)} page updated successfully!`);
+  };
+
+  // Handle page selection change
+  const handlePageChange = (page: keyof PageContentStore) => {
+    setCurrentPage(page);
+    pageContentForm.reset({
+      title: pages[page].title,
+      content: pages[page].content
+    });
   };
 
   // Delete a product
@@ -291,13 +393,26 @@ const Admin = () => {
     }
   };
 
+  // Handle logout
+  const handleLogout = () => {
+    logout();
+    toast.success("You have been logged out");
+    navigate("/login");
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       
       <main className="flex-1">
         <div className="container-custom py-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-morocco-navy mb-6">Super Admin Dashboard</h1>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl md:text-4xl font-bold text-morocco-navy">Super Admin Dashboard</h1>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
           <p className="text-lg text-morocco-navy/70 mb-8">
             Manage your products, orders, testimonials, and website content
           </p>
@@ -306,6 +421,14 @@ const Admin = () => {
             {/* Sidebar */}
             <div className="lg:w-64 space-y-2">
               <Button 
+                variant={currentTab === "orders" ? "default" : "outline"}
+                className="w-full justify-start"
+                onClick={() => setCurrentTab("orders")}
+              >
+                <Truck className="mr-2 h-4 w-4" />
+                Orders
+              </Button>
+              <Button 
                 variant={currentTab === "products" ? "default" : "outline"}
                 className="w-full justify-start"
                 onClick={() => setCurrentTab("products")}
@@ -313,17 +436,11 @@ const Admin = () => {
                 Products
               </Button>
               <Button 
-                variant={currentTab === "orders" ? "default" : "outline"}
-                className="w-full justify-start"
-                onClick={() => setCurrentTab("orders")}
-              >
-                Orders
-              </Button>
-              <Button 
                 variant={currentTab === "messages" ? "default" : "outline"}
                 className="w-full justify-start flex items-center"
                 onClick={() => setCurrentTab("messages")}
               >
+                <MessageSquare className="mr-2 h-4 w-4" />
                 <span>Messages</span>
                 {unreadMessageCount > 0 && (
                   <Badge variant="destructive" className="ml-2">{unreadMessageCount}</Badge>
@@ -334,14 +451,8 @@ const Admin = () => {
                 className="w-full justify-start"
                 onClick={() => setCurrentTab("testimonials")}
               >
+                <Users className="mr-2 h-4 w-4" />
                 Testimonials
-              </Button>
-              <Button 
-                variant={currentTab === "content" ? "default" : "outline"}
-                className="w-full justify-start"
-                onClick={() => setCurrentTab("content")}
-              >
-                Social Media
               </Button>
               <Button 
                 variant={currentTab === "websiteContent" ? "default" : "outline"}
@@ -352,7 +463,25 @@ const Admin = () => {
                 }}
               >
                 <Settings className="mr-2 h-4 w-4" />
-                Website Content
+                Main Content
+              </Button>
+              <Button 
+                variant={currentTab === "pageContent" ? "default" : "outline"}
+                className="w-full justify-start"
+                onClick={() => {
+                  setCurrentTab("pageContent");
+                  handlePageChange("about");
+                }}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Page Content
+              </Button>
+              <Button 
+                variant={currentTab === "content" ? "default" : "outline"}
+                className="w-full justify-start"
+                onClick={() => setCurrentTab("content")}
+              >
+                Social Media
               </Button>
               <Button 
                 variant={currentTab === "new" ? "default" : "outline"}
@@ -704,565 +833,3 @@ const Admin = () => {
                   </CardContent>
                 </Card>
               )}
-              
-              {currentTab === "content" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Social Media Links</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-8">
-                      <form onSubmit={handleSocialLinksUpdate} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="facebook">Facebook URL</Label>
-                            <Input 
-                              id="facebook" 
-                              value={socialLinksForm.facebook} 
-                              onChange={(e) => setSocialLinksForm({...socialLinksForm, facebook: e.target.value})}
-                              placeholder="https://facebook.com/yourbusiness"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="instagram">Instagram URL</Label>
-                            <Input 
-                              id="instagram" 
-                              value={socialLinksForm.instagram} 
-                              onChange={(e) => setSocialLinksForm({...socialLinksForm, instagram: e.target.value})}
-                              placeholder="https://instagram.com/yourbusiness"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="twitter">Twitter (X) URL</Label>
-                            <Input 
-                              id="twitter" 
-                              value={socialLinksForm.twitter} 
-                              onChange={(e) => setSocialLinksForm({...socialLinksForm, twitter: e.target.value})}
-                              placeholder="https://twitter.com/yourbusiness"
-                            />
-                          </div>
-                        </div>
-                        <Button type="submit">Update Social Links</Button>
-                      </form>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {currentTab === "websiteContent" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Website Content Management</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Tabs defaultValue="text">
-                      <TabsList className="mb-4">
-                        <TabsTrigger value="text">Text Content</TabsTrigger>
-                        <TabsTrigger value="images">Images</TabsTrigger>
-                      </TabsList>
-                      
-                      <TabsContent value="text">
-                        <Form {...contentForm}>
-                          <form onSubmit={contentForm.handleSubmit(onContentSubmit)} className="space-y-6">
-                            <div className="space-y-4">
-                              <h3 className="font-medium text-lg">Hero Section</h3>
-                              <FormField
-                                control={contentForm.control}
-                                name="heroTitle"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Hero Title</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={contentForm.control}
-                                name="heroSubtitle"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Hero Subtitle</FormLabel>
-                                    <FormControl>
-                                      <Textarea {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={contentForm.control}
-                                name="heroButtonText"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Hero Button Text</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-
-                            <div className="space-y-4">
-                              <h3 className="font-medium text-lg">About Section</h3>
-                              <FormField
-                                control={contentForm.control}
-                                name="aboutTitle"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>About Title</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={contentForm.control}
-                                name="aboutDescription"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>About Description</FormLabel>
-                                    <FormControl>
-                                      <Textarea {...field} rows={4} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-
-                            <div className="space-y-4">
-                              <h3 className="font-medium text-lg">Other Sections</h3>
-                              <FormField
-                                control={contentForm.control}
-                                name="featuredTitle"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Featured Products Title</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={contentForm.control}
-                                name="contactTitle"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Contact Section Title</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={contentForm.control}
-                                name="contactSubtitle"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Contact Section Subtitle</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={contentForm.control}
-                                name="footerText"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Footer Text</FormLabel>
-                                    <FormControl>
-                                      <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-
-                            <Button type="submit">Save Content Changes</Button>
-                          </form>
-                        </Form>
-                      </TabsContent>
-                      
-                      <TabsContent value="images">
-                        <div className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="border rounded-lg overflow-hidden">
-                              <div className="aspect-w-16 aspect-h-9 bg-gray-100">
-                                <img 
-                                  src={images.heroImage} 
-                                  alt="Hero banner" 
-                                  className="object-cover w-full h-full"
-                                />
-                              </div>
-                              <div className="p-4">
-                                <h3 className="font-medium mb-2">Hero Image</h3>
-                                <Button 
-                                  variant="outline" 
-                                  onClick={() => handleImageUpload('heroImage')}
-                                  className="w-full"
-                                >
-                                  <Upload className="h-4 w-4 mr-2" />
-                                  Change Hero Image
-                                </Button>
-                              </div>
-                            </div>
-                            <div className="border rounded-lg overflow-hidden">
-                              <div className="aspect-w-16 aspect-h-9 bg-gray-100">
-                                <img 
-                                  src={images.aboutImage} 
-                                  alt="About section" 
-                                  className="object-cover w-full h-full"
-                                />
-                              </div>
-                              <div className="p-4">
-                                <h3 className="font-medium mb-2">About Section Image</h3>
-                                <Button 
-                                  variant="outline"
-                                  onClick={() => handleImageUpload('aboutImage')}
-                                  className="w-full"
-                                >
-                                  <Upload className="h-4 w-4 mr-2" />
-                                  Change About Image
-                                </Button>
-                              </div>
-                            </div>
-                            <div className="border rounded-lg overflow-hidden">
-                              <div className="aspect-w-16 aspect-h-9 bg-gray-100">
-                                <img 
-                                  src={images.bannerImage} 
-                                  alt="Promo banner" 
-                                  className="object-cover w-full h-full"
-                                />
-                              </div>
-                              <div className="p-4">
-                                <h3 className="font-medium mb-2">Promo Banner Image</h3>
-                                <Button 
-                                  variant="outline"
-                                  onClick={() => handleImageUpload('bannerImage')}
-                                  className="w-full"
-                                >
-                                  <Upload className="h-4 w-4 mr-2" />
-                                  Change Banner Image
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {currentTab === "new" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{editingProduct ? "Edit Product" : "Add New Product"}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Form {...productForm}>
-                      <form onSubmit={productForm.handleSubmit(onProductSubmit)} className="space-y-6">
-                        <FormField
-                          control={productForm.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Product Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Enter product name" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <FormField
-                            control={productForm.control}
-                            name="price"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Price (MAD)</FormLabel>
-                                <FormControl>
-                                  <Input type="number" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={productForm.control}
-                            name="originalPrice"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Original Price (MAD, optional)</FormLabel>
-                                <FormControl>
-                                  <Input type="number" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        
-                        <FormField
-                          control={productForm.control}
-                          name="category"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Category</FormLabel>
-                              <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a category" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="boys">Boys</SelectItem>
-                                  <SelectItem value="girls">Girls</SelectItem>
-                                  <SelectItem value="baby">Baby</SelectItem>
-                                  <SelectItem value="accessories">Accessories</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={productForm.control}
-                          name="image"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Image URL</FormLabel>
-                              <FormControl>
-                                <Input placeholder="https://example.com/image.jpg" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                          <FormField
-                            control={productForm.control}
-                            name="isNew"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                                <FormControl>
-                                  <input
-                                    type="checkbox"
-                                    checked={field.value}
-                                    onChange={field.onChange}
-                                    className="h-4 w-4 mt-1"
-                                  />
-                                </FormControl>
-                                <div className="space-y-1 leading-none">
-                                  <FormLabel>Mark as New</FormLabel>
-                                </div>
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={productForm.control}
-                            name="isSale"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                                <FormControl>
-                                  <input
-                                    type="checkbox"
-                                    checked={field.value}
-                                    onChange={field.onChange}
-                                    className="h-4 w-4 mt-1"
-                                  />
-                                </FormControl>
-                                <div className="space-y-1 leading-none">
-                                  <FormLabel>Mark as Sale</FormLabel>
-                                </div>
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={productForm.control}
-                            name="rating"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Rating (0-5)</FormLabel>
-                                <FormControl>
-                                  <Input type="number" min="0" max="5" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <Button type="submit">
-                            {editingProduct ? "Update Product" : "Add Product"}
-                          </Button>
-                          <Button 
-                            type="button" 
-                            variant="outline"
-                            onClick={() => {
-                              productForm.reset();
-                              setEditingProduct(null);
-                              setCurrentTab("products");
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </form>
-                    </Form>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        </div>
-      </main>
-      
-      {/* Order Status Dialog */}
-      <Dialog 
-        open={orderStatusDialog.isOpen} 
-        onOpenChange={(open) => !open && setOrderStatusDialog(prev => ({ ...prev, isOpen: false }))}
-      >
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Update Order Status</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="status">New Status</Label>
-            <Select
-              value={orderStatusDialog.status}
-              onValueChange={(value: Order['status']) => 
-                setOrderStatusDialog(prev => ({ ...prev, status: value }))
-              }
-            >
-              <SelectTrigger className="w-full mt-2">
-                <SelectValue placeholder="Select a status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOrderStatusDialog(prev => ({ ...prev, isOpen: false }))}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateOrderStatus}>
-              Update Status
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Message View Dialog */}
-      <Dialog
-        open={messageViewDialog.isOpen}
-        onOpenChange={(open) => !open && setMessageViewDialog({ isOpen: false, message: null })}
-      >
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>{messageViewDialog.message?.subject}</DialogTitle>
-            <DialogDescription>
-              From: {messageViewDialog.message?.name} ({messageViewDialog.message?.email})
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <div className="bg-gray-50 p-4 rounded-md min-h-[100px] whitespace-pre-wrap">
-              {messageViewDialog.message?.message}
-            </div>
-            <div className="text-sm text-gray-500 mt-4">
-              Received on: {messageViewDialog.message?.date}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setMessageViewDialog({ isOpen: false, message: null })}
-            >
-              Close
-            </Button>
-            <Button 
-              onClick={() => {
-                if (messageViewDialog.message) {
-                  window.location.href = `mailto:${messageViewDialog.message.email}?subject=Re: ${messageViewDialog.message.subject}`;
-                }
-              }}
-            >
-              Reply via Email
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Image Upload Dialog */}
-      <Dialog
-        open={imageUploadDialog.isOpen}
-        onOpenChange={(open) => !open && setImageUploadDialog({ isOpen: false, imageType: null })}
-      >
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Update Image</DialogTitle>
-            <DialogDescription>
-              Enter the URL of the new image
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleImageUrlUpdate} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="imageUrl">Image URL</Label>
-              <Input 
-                id="imageUrl" 
-                name="imageUrl" 
-                placeholder="https://example.com/image.jpg"
-                required
-              />
-              <p className="text-xs text-gray-500">
-                Paste a direct link to an image. For best results, use high-resolution images.
-              </p>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => setImageUploadDialog({ isOpen: false, imageType: null })}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                Update Image
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-      
-      <Footer />
-    </div>
-  );
-};
-
-export default Admin;

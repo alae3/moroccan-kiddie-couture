@@ -1,24 +1,29 @@
+
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Search, Menu, X } from 'lucide-react';
+import { ShoppingBag, Search, Menu, X, User } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { cn } from '@/lib/utils';
 import { useProductStore } from '@/store/productStore';
+import { useAuthStore } from '@/store/authStore';
+
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigate = useNavigate();
-  const {
-    products
-  } = useProductStore();
+  const { products } = useProductStore();
+  const { isAuthenticated } = useAuthStore();
+  
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
+  
   const toggleSearch = () => {
     setIsSearchOpen(!isSearchOpen);
   };
+  
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
@@ -27,6 +32,7 @@ const Navbar = () => {
       setIsSearchOpen(false);
     }
   };
+  
   return <header className="bg-white/95 backdrop-blur-sm sticky top-0 z-50 border-b border-morocco-sand shadow-sm">
       <div className="container-custom py-4">
         <div className="flex items-center justify-between">
@@ -63,7 +69,11 @@ const Navbar = () => {
             <Button variant="ghost" size="icon" asChild>
               <Link to="/cart">
                 <ShoppingBag className="h-5 w-5" />
-                
+              </Link>
+            </Button>
+            <Button variant="ghost" size="icon" asChild>
+              <Link to={isAuthenticated ? "/admin" : "/login"}>
+                <User className="h-5 w-5" />
               </Link>
             </Button>
             <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleMenu}>
@@ -102,8 +112,8 @@ const Navbar = () => {
           <Link to="/stores" onClick={toggleMenu} className="text-morocco-navy font-medium py-2 border-b border-gray-100">
             Our Stores
           </Link>
-          <Link to="/careers" onClick={toggleMenu} className="text-morocco-navy font-medium py-2 border-b border-gray-100">
-            Careers
+          <Link to={isAuthenticated ? "/admin" : "/login"} onClick={toggleMenu} className="text-morocco-navy font-medium py-2 border-b border-gray-100">
+            {isAuthenticated ? "Admin Dashboard" : "Admin Login"}
           </Link>
           <div className="py-2">
             <form onSubmit={handleSearch} className="relative">
