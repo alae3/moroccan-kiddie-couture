@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -617,7 +616,7 @@ const Admin = () => {
                               <TableRow key={testimonial.id}>
                                 <TableCell>{testimonial.name}</TableCell>
                                 <TableCell>{testimonial.rating}</TableCell>
-                                <TableCell className="max-w-xs truncate">{testimonial.comment}</TableCell>
+                                <TableCell className="max-w-xs truncate">{testimonial.text}</TableCell>
                                 <TableCell>
                                   <div className="flex gap-2">
                                     <Button 
@@ -646,15 +645,19 @@ const Admin = () => {
                             e.preventDefault();
                             const form = e.target as HTMLFormElement;
                             const name = (form.elements.namedItem('name') as HTMLInputElement).value;
+                            const location = (form.elements.namedItem('location') as HTMLInputElement).value;
                             const rating = parseInt((form.elements.namedItem('rating') as HTMLSelectElement).value);
-                            const comment = (form.elements.namedItem('comment') as HTMLTextAreaElement).value;
+                            const text = (form.elements.namedItem('comment') as HTMLTextAreaElement).value;
+                            const image = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80";
 
-                            if (name && rating && comment) {
+                            if (name && location && rating && text) {
                               const newTestimonial = {
                                 id: Math.max(...testimonials.map(t => t.id), 0) + 1,
                                 name,
+                                location,
+                                image,
                                 rating,
-                                comment
+                                text
                               };
                               setTestimonials([...testimonials, newTestimonial]);
                               form.reset();
@@ -668,6 +671,12 @@ const Admin = () => {
                               <Label htmlFor="name">Customer Name</Label>
                               <Input id="name" name="name" required />
                             </div>
+                            <div>
+                              <Label htmlFor="location">Location</Label>
+                              <Input id="location" name="location" placeholder="e.g. Rabat" required />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <Label htmlFor="rating">Rating (1-5)</Label>
                               <Select name="rating" defaultValue="5">
@@ -685,7 +694,7 @@ const Admin = () => {
                             </div>
                           </div>
                           <div>
-                            <Label htmlFor="comment">Comment</Label>
+                            <Label htmlFor="comment">Testimonial Text</Label>
                             <Textarea id="comment" name="comment" rows={4} required />
                           </div>
                           <Button type="submit">Add Testimonial</Button>
