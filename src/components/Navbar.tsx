@@ -58,15 +58,6 @@ const Navbar = () => {
             <Link to="/baby" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
               Baby
             </Link>
-            <Link to="/new-arrivals" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
-              New Arrivals
-            </Link>
-            <Link to="/about" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
-              About Us
-            </Link>
-            <Link to="/sustainability" className="text-morocco-navy hover:text-morocco-terracotta font-medium transition-colors">
-              Sustainability
-            </Link>
           </nav>
 
           {/* Right side icons */}
@@ -155,27 +146,6 @@ const Navbar = () => {
             className="text-morocco-navy font-medium py-2 border-b border-gray-100"
           >
             Baby
-          </Link>
-          <Link 
-            to="/new-arrivals"
-            onClick={toggleMenu}
-            className="text-morocco-navy font-medium py-2 border-b border-gray-100"
-          >
-            New Arrivals
-          </Link>
-          <Link 
-            to="/about"
-            onClick={toggleMenu}
-            className="text-morocco-navy font-medium py-2 border-b border-gray-100"
-          >
-            About Us
-          </Link>
-          <Link 
-            to="/sustainability"
-            onClick={toggleMenu}
-            className="text-morocco-navy font-medium py-2 border-b border-gray-100"
-          >
-            Sustainability
           </Link>
           <Link 
             to="/stores"
