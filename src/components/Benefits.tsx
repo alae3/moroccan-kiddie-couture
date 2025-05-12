@@ -1,6 +1,4 @@
-
 import { Shield, Truck, RefreshCw, Clock } from 'lucide-react';
-
 const benefits = [{
   icon: <Truck className="h-8 w-8 text-morocco-blue" />,
   title: "Free Shipping",
@@ -18,23 +16,13 @@ const benefits = [{
   title: "24/7 Support",
   description: "Dedicated customer service for all your queries"
 }];
-
 const Benefits = () => {
-  return (
-    <section className="py-12 bg-white">
+  return <section className="py-12 bg-white">
       <div className="container-custom">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {benefits.map((benefit, index) => (
-            <div key={index} className="flex flex-col items-center text-center">
-              <div className="mb-4">{benefit.icon}</div>
-              <h3 className="text-lg font-medium mb-2">{benefit.title}</h3>
-              <p className="text-sm text-gray-600">{benefit.description}</p>
-            </div>
-          ))}
+          {benefits.map((benefit, index) => {})}
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default Benefits;
