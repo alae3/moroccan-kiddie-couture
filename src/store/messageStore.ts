@@ -19,27 +19,8 @@ interface MessageStore {
   deleteMessage: (id: number) => void;
 }
 
-// Sample messages
-const initialMessages: Message[] = [
-  {
-    id: 1,
-    name: "Sara Ahmed",
-    email: "sara.ahmed@example.com",
-    subject: "Size question",
-    message: "Hello, do you have the blue dress in size 6 years?",
-    date: "2025-05-08",
-    read: true
-  },
-  {
-    id: 2,
-    name: "Mohammed Tazi",
-    email: "mtazi@example.com",
-    subject: "International shipping",
-    message: "Do you ship to France? How much would it cost?",
-    date: "2025-05-07",
-    read: false
-  }
-];
+// Start with empty messages
+const initialMessages: Message[] = [];
 
 export const useMessageStore = create<MessageStore>()(
   persist(
@@ -47,7 +28,7 @@ export const useMessageStore = create<MessageStore>()(
       messages: initialMessages,
       addMessage: (messageData) => {
         const newMessage = {
-          id: Math.max(0, ...get().messages.map(m => m.id)) + 1,
+          id: Math.max(0, ...get().messages.map(m => m.id), 0) + 1,
           date: new Date().toISOString().split('T')[0], // Format: YYYY-MM-DD
           read: false,
           ...messageData

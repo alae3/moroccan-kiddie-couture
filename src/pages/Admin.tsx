@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -33,11 +34,10 @@ import {
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import TestimonialsManager from "@/components/TestimonialsManager";
 import { useTestimonialStore } from "@/store/testimonialStore";
 import { useProductStore } from "@/store/productStore";
 import { Order, useOrderStore } from "@/store/orderStore";
-import { Edit, Eye, Mail, MessageSquare, Trash2 } from "lucide-react";
+import { Edit, Eye, Mail, MessageSquare, Trash2, Upload, Image, Settings } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +49,13 @@ import {
 import { useSocialStore } from "@/store/socialStore";
 import { useMessageStore, Message } from "@/store/messageStore";
 import { Badge } from "@/components/ui/badge";
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from "@/components/ui/tabs";
+import { useContentStore, WebsiteContent, WebsiteImages } from "@/store/contentStore";
 
 // Form schema for product validation
 const productSchema = z.object({
@@ -62,17 +69,32 @@ const productSchema = z.object({
   rating: z.coerce.number().min(0).max(5).default(5),
 });
 
+// Website content schema
+const contentSchema = z.object({
+  heroTitle: z.string().min(3, { message: "Title must be at least 3 characters" }),
+  heroSubtitle: z.string(),
+  heroButtonText: z.string(),
+  aboutTitle: z.string(),
+  aboutDescription: z.string(),
+  featuredTitle: z.string(),
+  contactTitle: z.string(),
+  contactSubtitle: z.string(),
+  footerText: z.string(),
+});
+
 type ProductFormValues = z.infer<typeof productSchema>;
+type ContentFormValues = z.infer<typeof contentSchema>;
 
 const Admin = () => {
   // Access global stores
   const { products, setProducts } = useProductStore();
   const { testimonials, setTestimonials } = useTestimonialStore();
-  const { orders, updateOrderStatus } = useOrderStore();
+  const { orders, updateOrderStatus, deleteOrder } = useOrderStore();
   const { socialLinks, updateSocialLinks } = useSocialStore();
   const { messages, markAsRead, deleteMessage } = useMessageStore();
+  const { textContent, images, updateTextContent, updateImage } = useContentStore();
   
-  const [currentTab, setCurrentTab] = useState<"products" | "orders" | "new" | "testimonials" | "content" | "messages">("orders");
+  const [currentTab, setCurrentTab] = useState<"products" | "orders" | "new" | "testimonials" | "content" | "messages" | "websiteContent">("orders");
   const [editingProduct, setEditingProduct] = useState<typeof products[0] | null>(null);
   const [orderStatusDialog, setOrderStatusDialog] = useState<{
     isOpen: boolean;
@@ -92,11 +114,19 @@ const Admin = () => {
     message: null
   });
 
+  const [imageUploadDialog, setImageUploadDialog] = useState<{
+    isOpen: boolean;
+    imageType: keyof WebsiteImages | null;
+  }>({
+    isOpen: false,
+    imageType: null
+  });
+
   // Count unread messages
   const unreadMessageCount = messages.filter(msg => !msg.read).length;
 
   // Form for adding/editing products
-  const form = useForm<ProductFormValues>({
+  const productForm = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: "",
@@ -109,8 +139,14 @@ const Admin = () => {
     }
   });
 
+  // Form for website content
+  const contentForm = useForm<ContentFormValues>({
+    resolver: zodResolver(contentSchema),
+    defaultValues: textContent
+  });
+
   // Handle product form submission
-  const onSubmit = (data: ProductFormValues) => {
+  const onProductSubmit = (data: ProductFormValues) => {
     if (editingProduct) {
       // Edit existing product
       const updatedProducts = products.map(product => 
@@ -121,9 +157,9 @@ const Admin = () => {
       setProducts(updatedProducts);
       toast.success(`Product "${data.name}" updated successfully!`);
     } else {
-      // Add new product - ensure all required fields are present
+      // Add new product
       const newProduct = {
-        id: Math.max(...products.map(p => p.id)) + 1,
+        id: Math.max(...products.map(p => p.id), 0) + 1,
         name: data.name,
         price: data.price,
         image: data.image,
@@ -138,9 +174,15 @@ const Admin = () => {
       toast.success(`Product "${data.name}" added successfully!`);
     }
     
-    form.reset();
+    productForm.reset();
     setEditingProduct(null);
     setCurrentTab("products");
+  };
+
+  // Handle website content form submission
+  const onContentSubmit = (data: ContentFormValues) => {
+    updateTextContent(data);
+    toast.success("Website content updated successfully!");
   };
 
   // Delete a product
@@ -152,7 +194,7 @@ const Admin = () => {
   // Edit a product
   const handleEditProduct = (product: typeof products[0]) => {
     setEditingProduct(product);
-    form.reset({
+    productForm.reset({
       name: product.name,
       price: product.price,
       originalPrice: product.originalPrice,
@@ -178,9 +220,15 @@ const Admin = () => {
   const handleUpdateOrderStatus = () => {
     if (orderStatusDialog.orderId && orderStatusDialog.status) {
       updateOrderStatus(orderStatusDialog.orderId, orderStatusDialog.status);
-      toast.success(`Order #${orderStatusDialog.orderId} status updated to ${orderStatusDialog.status}!`);
+      toast.success(`Order status updated to ${orderStatusDialog.status}!`);
       setOrderStatusDialog({ isOpen: false, orderId: null, status: "pending" });
     }
+  };
+
+  // Delete an order
+  const handleDeleteOrder = (id: number) => {
+    deleteOrder(id);
+    toast.success("Order deleted successfully!");
   };
 
   // View message
@@ -223,13 +271,34 @@ const Admin = () => {
     toast.success("Social media links updated successfully!");
   };
 
+  // Handle image upload
+  const handleImageUpload = (imageType: keyof WebsiteImages) => {
+    setImageUploadDialog({
+      isOpen: true,
+      imageType
+    });
+  };
+
+  // Process image URL update
+  const handleImageUrlUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const imageUrl = (form.elements.namedItem('imageUrl') as HTMLInputElement).value;
+    
+    if (imageUploadDialog.imageType && imageUrl) {
+      updateImage(imageUploadDialog.imageType, imageUrl);
+      toast.success(`${imageUploadDialog.imageType} image updated successfully!`);
+      setImageUploadDialog({ isOpen: false, imageType: null });
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       
       <main className="flex-1">
         <div className="container-custom py-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-morocco-navy mb-6">Admin Dashboard</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-morocco-navy mb-6">Super Admin Dashboard</h1>
           <p className="text-lg text-morocco-navy/70 mb-8">
             Manage your products, orders, testimonials, and website content
           </p>
@@ -273,6 +342,17 @@ const Admin = () => {
                 className="w-full justify-start"
                 onClick={() => setCurrentTab("content")}
               >
+                Social Media
+              </Button>
+              <Button 
+                variant={currentTab === "websiteContent" ? "default" : "outline"}
+                className="w-full justify-start"
+                onClick={() => {
+                  setCurrentTab("websiteContent");
+                  contentForm.reset(textContent);
+                }}
+              >
+                <Settings className="mr-2 h-4 w-4" />
                 Website Content
               </Button>
               <Button 
@@ -280,7 +360,7 @@ const Admin = () => {
                 className="w-full justify-start"
                 onClick={() => {
                   setEditingProduct(null);
-                  form.reset();
+                  productForm.reset();
                   setCurrentTab("new");
                 }}
               >
@@ -374,47 +454,62 @@ const Admin = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {orders.map((order) => (
-                            <TableRow key={order.id}>
-                              <TableCell>{order.orderNumber}</TableCell>
-                              <TableCell>{order.customer}</TableCell>
-                              <TableCell>{order.date}</TableCell>
-                              <TableCell>{order.items.join(", ")}</TableCell>
-                              <TableCell>{order.total} MAD</TableCell>
-                              <TableCell>
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  order.status === "completed" 
-                                    ? "bg-green-100 text-green-800" 
-                                    : order.status === "processing"
-                                      ? "bg-blue-100 text-blue-800"
-                                      : order.status === "cancelled"
-                                        ? "bg-red-100 text-red-800"
-                                        : "bg-yellow-100 text-yellow-800"
-                                }`}>
-                                  {order.status}
-                                </span>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex gap-2">
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    onClick={() => openOrderStatusDialog(order)}
-                                  >
-                                    <Edit className="h-4 w-4 mr-1" />
-                                    Status
-                                  </Button>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    onClick={() => handleNotifyOrder(order.id)}
-                                  >
-                                    Contact
-                                  </Button>
-                                </div>
+                          {orders.length > 0 ? (
+                            orders.map((order) => (
+                              <TableRow key={order.id}>
+                                <TableCell>{order.orderNumber}</TableCell>
+                                <TableCell>{order.customer}</TableCell>
+                                <TableCell>{order.date}</TableCell>
+                                <TableCell>{order.items.join(", ")}</TableCell>
+                                <TableCell>{order.total} MAD</TableCell>
+                                <TableCell>
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    order.status === "completed" 
+                                      ? "bg-green-100 text-green-800" 
+                                      : order.status === "processing"
+                                        ? "bg-blue-100 text-blue-800"
+                                        : order.status === "cancelled"
+                                          ? "bg-red-100 text-red-800"
+                                          : "bg-yellow-100 text-yellow-800"
+                                  }`}>
+                                    {order.status}
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      onClick={() => openOrderStatusDialog(order)}
+                                    >
+                                      <Edit className="h-4 w-4 mr-1" />
+                                      Status
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      onClick={() => handleNotifyOrder(order.id)}
+                                    >
+                                      Contact
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="destructive"
+                                      onClick={() => handleDeleteOrder(order.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center py-4 text-gray-500">
+                                No orders yet. When customers place orders, they will appear here.
                               </TableCell>
                             </TableRow>
-                          ))}
+                          )}
                         </TableBody>
                       </Table>
                     </div>
@@ -492,7 +587,7 @@ const Admin = () => {
                       ) : (
                         <div className="text-center py-8">
                           <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                          <p className="text-gray-500">No messages yet</p>
+                          <p className="text-gray-500">No messages yet. When customers send messages, they will appear here.</p>
                         </div>
                       )}
                     </div>
@@ -501,55 +596,366 @@ const Admin = () => {
               )}
               
               {currentTab === "testimonials" && (
-                <TestimonialsManager 
-                  initialTestimonials={testimonials} 
-                  onTestimonialsChange={setTestimonials}
-                />
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Testimonials Management</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Name</TableHead>
+                              <TableHead>Rating</TableHead>
+                              <TableHead>Comment</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {testimonials.map((testimonial) => (
+                              <TableRow key={testimonial.id}>
+                                <TableCell>{testimonial.name}</TableCell>
+                                <TableCell>{testimonial.rating}</TableCell>
+                                <TableCell className="max-w-xs truncate">{testimonial.comment}</TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      size="sm" 
+                                      variant="destructive"
+                                      onClick={() => {
+                                        setTestimonials(testimonials.filter(t => t.id !== testimonial.id));
+                                        toast.success("Testimonial deleted successfully!");
+                                      }}
+                                    >
+                                      Delete
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+
+                      {/* Add new testimonial */}
+                      <div className="border rounded-md p-4 mt-6">
+                        <h3 className="text-lg font-medium mb-4">Add New Testimonial</h3>
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            const form = e.target as HTMLFormElement;
+                            const name = (form.elements.namedItem('name') as HTMLInputElement).value;
+                            const rating = parseInt((form.elements.namedItem('rating') as HTMLSelectElement).value);
+                            const comment = (form.elements.namedItem('comment') as HTMLTextAreaElement).value;
+
+                            if (name && rating && comment) {
+                              const newTestimonial = {
+                                id: Math.max(...testimonials.map(t => t.id), 0) + 1,
+                                name,
+                                rating,
+                                comment
+                              };
+                              setTestimonials([...testimonials, newTestimonial]);
+                              form.reset();
+                              toast.success("Testimonial added successfully!");
+                            }
+                          }}
+                          className="space-y-4"
+                        >
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="name">Customer Name</Label>
+                              <Input id="name" name="name" required />
+                            </div>
+                            <div>
+                              <Label htmlFor="rating">Rating (1-5)</Label>
+                              <Select name="rating" defaultValue="5">
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select rating" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="1">1 - Poor</SelectItem>
+                                  <SelectItem value="2">2 - Fair</SelectItem>
+                                  <SelectItem value="3">3 - Good</SelectItem>
+                                  <SelectItem value="4">4 - Very Good</SelectItem>
+                                  <SelectItem value="5">5 - Excellent</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div>
+                            <Label htmlFor="comment">Comment</Label>
+                            <Textarea id="comment" name="comment" rows={4} required />
+                          </div>
+                          <Button type="submit">Add Testimonial</Button>
+                        </form>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
               
               {currentTab === "content" && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Website Content Management</CardTitle>
+                    <CardTitle>Social Media Links</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-8">
-                      <div>
-                        <h3 className="text-lg font-medium mb-4">Social Media Links</h3>
-                        <form onSubmit={handleSocialLinksUpdate} className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="facebook">Facebook URL</Label>
-                              <Input 
-                                id="facebook" 
-                                value={socialLinksForm.facebook} 
-                                onChange={(e) => setSocialLinksForm({...socialLinksForm, facebook: e.target.value})}
-                                placeholder="https://facebook.com/yourbusiness"
+                      <form onSubmit={handleSocialLinksUpdate} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="facebook">Facebook URL</Label>
+                            <Input 
+                              id="facebook" 
+                              value={socialLinksForm.facebook} 
+                              onChange={(e) => setSocialLinksForm({...socialLinksForm, facebook: e.target.value})}
+                              placeholder="https://facebook.com/yourbusiness"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="instagram">Instagram URL</Label>
+                            <Input 
+                              id="instagram" 
+                              value={socialLinksForm.instagram} 
+                              onChange={(e) => setSocialLinksForm({...socialLinksForm, instagram: e.target.value})}
+                              placeholder="https://instagram.com/yourbusiness"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="twitter">Twitter (X) URL</Label>
+                            <Input 
+                              id="twitter" 
+                              value={socialLinksForm.twitter} 
+                              onChange={(e) => setSocialLinksForm({...socialLinksForm, twitter: e.target.value})}
+                              placeholder="https://twitter.com/yourbusiness"
+                            />
+                          </div>
+                        </div>
+                        <Button type="submit">Update Social Links</Button>
+                      </form>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {currentTab === "websiteContent" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Website Content Management</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs defaultValue="text">
+                      <TabsList className="mb-4">
+                        <TabsTrigger value="text">Text Content</TabsTrigger>
+                        <TabsTrigger value="images">Images</TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="text">
+                        <Form {...contentForm}>
+                          <form onSubmit={contentForm.handleSubmit(onContentSubmit)} className="space-y-6">
+                            <div className="space-y-4">
+                              <h3 className="font-medium text-lg">Hero Section</h3>
+                              <FormField
+                                control={contentForm.control}
+                                name="heroTitle"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Hero Title</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={contentForm.control}
+                                name="heroSubtitle"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Hero Subtitle</FormLabel>
+                                    <FormControl>
+                                      <Textarea {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={contentForm.control}
+                                name="heroButtonText"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Hero Button Text</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
                               />
                             </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="instagram">Instagram URL</Label>
-                              <Input 
-                                id="instagram" 
-                                value={socialLinksForm.instagram} 
-                                onChange={(e) => setSocialLinksForm({...socialLinksForm, instagram: e.target.value})}
-                                placeholder="https://instagram.com/yourbusiness"
+
+                            <div className="space-y-4">
+                              <h3 className="font-medium text-lg">About Section</h3>
+                              <FormField
+                                control={contentForm.control}
+                                name="aboutTitle"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>About Title</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={contentForm.control}
+                                name="aboutDescription"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>About Description</FormLabel>
+                                    <FormControl>
+                                      <Textarea {...field} rows={4} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
                               />
                             </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="twitter">Twitter (X) URL</Label>
-                              <Input 
-                                id="twitter" 
-                                value={socialLinksForm.twitter} 
-                                onChange={(e) => setSocialLinksForm({...socialLinksForm, twitter: e.target.value})}
-                                placeholder="https://twitter.com/yourbusiness"
+
+                            <div className="space-y-4">
+                              <h3 className="font-medium text-lg">Other Sections</h3>
+                              <FormField
+                                control={contentForm.control}
+                                name="featuredTitle"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Featured Products Title</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
                               />
+                              <FormField
+                                control={contentForm.control}
+                                name="contactTitle"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Contact Section Title</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={contentForm.control}
+                                name="contactSubtitle"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Contact Section Subtitle</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={contentForm.control}
+                                name="footerText"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Footer Text</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            <Button type="submit">Save Content Changes</Button>
+                          </form>
+                        </Form>
+                      </TabsContent>
+                      
+                      <TabsContent value="images">
+                        <div className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="border rounded-lg overflow-hidden">
+                              <div className="aspect-w-16 aspect-h-9 bg-gray-100">
+                                <img 
+                                  src={images.heroImage} 
+                                  alt="Hero banner" 
+                                  className="object-cover w-full h-full"
+                                />
+                              </div>
+                              <div className="p-4">
+                                <h3 className="font-medium mb-2">Hero Image</h3>
+                                <Button 
+                                  variant="outline" 
+                                  onClick={() => handleImageUpload('heroImage')}
+                                  className="w-full"
+                                >
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  Change Hero Image
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="border rounded-lg overflow-hidden">
+                              <div className="aspect-w-16 aspect-h-9 bg-gray-100">
+                                <img 
+                                  src={images.aboutImage} 
+                                  alt="About section" 
+                                  className="object-cover w-full h-full"
+                                />
+                              </div>
+                              <div className="p-4">
+                                <h3 className="font-medium mb-2">About Section Image</h3>
+                                <Button 
+                                  variant="outline"
+                                  onClick={() => handleImageUpload('aboutImage')}
+                                  className="w-full"
+                                >
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  Change About Image
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="border rounded-lg overflow-hidden">
+                              <div className="aspect-w-16 aspect-h-9 bg-gray-100">
+                                <img 
+                                  src={images.bannerImage} 
+                                  alt="Promo banner" 
+                                  className="object-cover w-full h-full"
+                                />
+                              </div>
+                              <div className="p-4">
+                                <h3 className="font-medium mb-2">Promo Banner Image</h3>
+                                <Button 
+                                  variant="outline"
+                                  onClick={() => handleImageUpload('bannerImage')}
+                                  className="w-full"
+                                >
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  Change Banner Image
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                          <Button type="submit">Update Social Links</Button>
-                        </form>
-                      </div>
-                    </div>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                   </CardContent>
                 </Card>
               )}
@@ -560,10 +966,10 @@ const Admin = () => {
                     <CardTitle>{editingProduct ? "Edit Product" : "Add New Product"}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <Form {...form}>
-                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <Form {...productForm}>
+                      <form onSubmit={productForm.handleSubmit(onProductSubmit)} className="space-y-6">
                         <FormField
-                          control={form.control}
+                          control={productForm.control}
                           name="name"
                           render={({ field }) => (
                             <FormItem>
@@ -578,7 +984,7 @@ const Admin = () => {
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <FormField
-                            control={form.control}
+                            control={productForm.control}
                             name="price"
                             render={({ field }) => (
                               <FormItem>
@@ -592,7 +998,7 @@ const Admin = () => {
                           />
                           
                           <FormField
-                            control={form.control}
+                            control={productForm.control}
                             name="originalPrice"
                             render={({ field }) => (
                               <FormItem>
@@ -607,7 +1013,7 @@ const Admin = () => {
                         </div>
                         
                         <FormField
-                          control={form.control}
+                          control={productForm.control}
                           name="category"
                           render={({ field }) => (
                             <FormItem>
@@ -634,7 +1040,7 @@ const Admin = () => {
                         />
                         
                         <FormField
-                          control={form.control}
+                          control={productForm.control}
                           name="image"
                           render={({ field }) => (
                             <FormItem>
@@ -649,7 +1055,7 @@ const Admin = () => {
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           <FormField
-                            control={form.control}
+                            control={productForm.control}
                             name="isNew"
                             render={({ field }) => (
                               <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
@@ -669,7 +1075,7 @@ const Admin = () => {
                           />
                           
                           <FormField
-                            control={form.control}
+                            control={productForm.control}
                             name="isSale"
                             render={({ field }) => (
                               <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
@@ -689,7 +1095,7 @@ const Admin = () => {
                           />
                           
                           <FormField
-                            control={form.control}
+                            control={productForm.control}
                             name="rating"
                             render={({ field }) => (
                               <FormItem>
@@ -711,7 +1117,7 @@ const Admin = () => {
                             type="button" 
                             variant="outline"
                             onClick={() => {
-                              form.reset();
+                              productForm.reset();
                               setEditingProduct(null);
                               setCurrentTab("products");
                             }}
@@ -805,6 +1211,43 @@ const Admin = () => {
               Reply via Email
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Upload Dialog */}
+      <Dialog
+        open={imageUploadDialog.isOpen}
+        onOpenChange={(open) => !open && setImageUploadDialog({ isOpen: false, imageType: null })}
+      >
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Update Image</DialogTitle>
+            <DialogDescription>
+              Enter the URL of the new image
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleImageUrlUpdate} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="imageUrl">Image URL</Label>
+              <Input 
+                id="imageUrl" 
+                name="imageUrl" 
+                placeholder="https://example.com/image.jpg"
+                required
+              />
+              <p className="text-xs text-gray-500">
+                Paste a direct link to an image. For best results, use high-resolution images.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => setImageUploadDialog({ isOpen: false, imageType: null })}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                Update Image
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
       

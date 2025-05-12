@@ -20,54 +20,24 @@ interface OrderStore {
   addOrder: (order: Omit<Order, 'id' | 'orderNumber'>) => Order;
   updateOrderStatus: (id: number, status: Order['status']) => void;
   getOrderByNumber: (orderNumber: string) => Order | undefined;
+  deleteOrder: (id: number) => void;
 }
 
-// Sample orders
-const initialOrders: Order[] = [
-  { 
-    id: 1, 
-    orderNumber: "NK-10001",
-    customer: "Ahmed Benali", 
-    date: "2025-05-07", 
-    total: 398, 
-    status: "pending",
-    items: ["Moroccan Print Dress", "Boys Summer T-shirt"],
-    contact: "+212 622 345678"
-  },
-  { 
-    id: 2, 
-    orderNumber: "NK-10002",
-    customer: "Yasmine Alaoui", 
-    date: "2025-05-06", 
-    total: 189, 
-    status: "completed",
-    items: ["Cotton Jumpsuit"],
-    contact: "yasmine@example.com"
-  },
-  { 
-    id: 3, 
-    orderNumber: "NK-10003",
-    customer: "Karim Idrissi", 
-    date: "2025-05-05", 
-    total: 578, 
-    status: "processing",
-    items: ["Traditional Kaftan", "Winter Coat with Hood"],
-    contact: "+212 677 123456"
-  }
-];
+// Initial orders - these will be replaced with user-entered data
+const initialOrders: Order[] = [];
 
 export const useOrderStore = create<OrderStore>()(
   persist(
     (set, get) => ({
       orders: initialOrders,
-      latestOrderNumber: 10003, // Start from our last sample order number
+      latestOrderNumber: 10000, // Start order numbers from 10000
       setOrders: (orders) => set({ orders }),
       addOrder: (orderData) => {
         const newOrderNumber = get().latestOrderNumber + 1;
         const formattedOrderNumber = `NK-${newOrderNumber}`;
         
         const newOrder = {
-          id: Math.max(0, ...get().orders.map(o => o.id)) + 1,
+          id: Math.max(0, ...get().orders.map(o => o.id), 0) + 1,
           orderNumber: formattedOrderNumber,
           ...orderData
         };
@@ -85,7 +55,11 @@ export const useOrderStore = create<OrderStore>()(
             order.id === id ? { ...order, status } : order
           )
         })),
-      getOrderByNumber: (orderNumber) => get().orders.find(order => order.orderNumber === orderNumber)
+      getOrderByNumber: (orderNumber) => get().orders.find(order => order.orderNumber === orderNumber),
+      deleteOrder: (id) => 
+        set((state) => ({
+          orders: state.orders.filter(order => order.id !== id)
+        }))
     }),
     {
       name: 'order-storage', // unique name for the localStorage key
