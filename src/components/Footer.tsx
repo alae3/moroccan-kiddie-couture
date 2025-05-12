@@ -1,14 +1,12 @@
-
 import { Link } from 'react-router-dom';
 import { Instagram, Facebook, X } from 'lucide-react';
 import { useSocialStore } from '@/store/socialStore';
-
 const Footer = () => {
   const year = new Date().getFullYear();
-  const { socialLinks } = useSocialStore();
-
-  return (
-    <footer className="bg-morocco-navy text-white pt-16">
+  const {
+    socialLinks
+  } = useSocialStore();
+  return <footer className="bg-morocco-navy text-white pt-16">
       <div className="container-custom">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
           {/* Logo and about */}
@@ -24,21 +22,15 @@ const Footer = () => {
               traditional craftsmanship with modern design for comfort and style.
             </p>
             <div className="flex space-x-4 mt-6">
-              {socialLinks.instagram && (
-                <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+              {socialLinks.instagram && <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   <Instagram className="h-6 w-6" />
-                </a>
-              )}
-              {socialLinks.facebook && (
-                <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                </a>}
+              {socialLinks.facebook && <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   <Facebook className="h-6 w-6" />
-                </a>
-              )}
-              {socialLinks.twitter && (
-                <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
+                </a>}
+              {socialLinks.twitter && <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
                   <X className="h-6 w-6" />
-                </a>
-              )}
+                </a>}
             </div>
           </div>
 
@@ -99,9 +91,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/faq" className="text-gray-300 hover:text-morocco-terracotta transition-colors">
-                  FAQ
-                </Link>
+                
               </li>
             </ul>
           </div>
@@ -157,8 +147,6 @@ const Footer = () => {
           </div>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default Footer;
