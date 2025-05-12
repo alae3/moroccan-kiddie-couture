@@ -54,14 +54,16 @@ export const useContentStore = create<ContentStore>()(
     (set) => ({
       textContent: defaultTextContent,
       images: defaultImages,
-      updateTextContent: (content) =>
+      updateTextContent: (content) => {
         set((state) => ({
           textContent: { ...state.textContent, ...content }
-        })),
-      updateImage: (key, url) =>
+        }));
+      },
+      updateImage: (key, url) => {
         set((state) => ({
           images: { ...state.images, [key]: url }
-        }))
+        }));
+      }
     }),
     {
       name: 'content-storage', // unique name for the localStorage key
