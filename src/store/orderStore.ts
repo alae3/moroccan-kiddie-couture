@@ -11,6 +11,7 @@ export interface Order {
   status: "pending" | "processing" | "completed" | "cancelled";
   items: string[];
   contact: string;
+  paymentMethod?: "cash" | "bank";
 }
 
 interface OrderStore {

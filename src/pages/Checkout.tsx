@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useOrderStore } from "@/store/orderStore";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const Checkout = () => {
   const { items, getTotal, clearCart } = useCartStore();
@@ -20,6 +22,7 @@ const Checkout = () => {
     zipCode: "",
     phone: "",
   });
+  const [paymentMethod, setPaymentMethod] = useState("cash");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -36,7 +39,8 @@ const Checkout = () => {
       total: getTotal(),
       status: "pending",
       items: items.map(item => `${item.name} (x${item.quantity})`),
-      contact: formData.email || formData.phone
+      contact: formData.email || formData.phone,
+      paymentMethod: paymentMethod
     });
     
     // Clear cart and redirect to track order page
@@ -156,6 +160,34 @@ const Checkout = () => {
                         required
                         className="w-full p-2 border border-gray-300 rounded-md focus:ring-morocco-terracotta focus:border-morocco-terracotta"
                       />
+                    </div>
+                    
+                    {/* Payment Method Selection */}
+                    <div className="mt-6">
+                      <h3 className="text-lg font-medium mb-3">Payment Method</h3>
+                      <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="cash" id="cash" />
+                          <Label htmlFor="cash" className="cursor-pointer">Cash on Delivery</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="bank" id="bank" />
+                          <Label htmlFor="bank" className="cursor-pointer">Pay via Bank Transfer</Label>
+                        </div>
+                      </RadioGroup>
+                      
+                      {paymentMethod === "bank" && (
+                        <div className="mt-3 p-3 border border-gray-200 rounded-md bg-gray-50">
+                          <p className="text-sm text-gray-600 mb-2">Bank Transfer Details:</p>
+                          <ul className="text-sm text-gray-600 space-y-1">
+                            <li><span className="font-medium">Bank Name:</span> Morocco National Bank</li>
+                            <li><span className="font-medium">Account Number:</span> 123-456-7890</li>
+                            <li><span className="font-medium">Account Holder:</span> NajihKids</li>
+                            <li><span className="font-medium">Reference:</span> Your Order Number</li>
+                          </ul>
+                          <p className="text-xs text-gray-500 mt-2">Please include your order number in the transfer reference</p>
+                        </div>
+                      )}
                     </div>
                     
                     <Button type="submit" className="w-full mt-6 bg-morocco-navy hover:bg-morocco-terracotta">
