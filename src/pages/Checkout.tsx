@@ -23,12 +23,19 @@ const Checkout = () => {
     zipCode: "",
     phone: "",
   });
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank">("cash");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank" | "card">("cash");
   const [bankDetails, setBankDetails] = useState({
     bankName: "",
     accountNumber: "",
     accountHolder: "",
     reference: "",
+  });
+  const [cardDetails, setCardDetails] = useState({
+    cardNumber: "",
+    cardholderName: "",
+    expiryMonth: "",
+    expiryYear: "",
+    cvv: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,16 +49,70 @@ const Checkout = () => {
     setBankDetails((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle card details inputs with validation
+  const handleCardDetailsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    // Apply specific validations based on the field
+    if (name === "cardNumber") {
+      // Only allow numbers and limit to 16 digits
+      const numbersOnly = value.replace(/\D/g, "").slice(0, 16);
+      setCardDetails((prev) => ({ ...prev, [name]: numbersOnly }));
+    } 
+    else if (name === "expiryMonth") {
+      // Only allow numbers and limit to 2 digits (1-12)
+      const numbersOnly = value.replace(/\D/g, "").slice(0, 2);
+      if (parseInt(numbersOnly) > 12 && numbersOnly.length === 2) {
+        return; // Don't update if value is greater than 12
+      }
+      setCardDetails((prev) => ({ ...prev, [name]: numbersOnly }));
+    }
+    else if (name === "expiryYear") {
+      // Only allow numbers and limit to 2 digits
+      const numbersOnly = value.replace(/\D/g, "").slice(0, 2);
+      setCardDetails((prev) => ({ ...prev, [name]: numbersOnly }));
+    }
+    else if (name === "cvv") {
+      // Only allow numbers and limit to 3 or 4 digits
+      const numbersOnly = value.replace(/\D/g, "").slice(0, 4);
+      setCardDetails((prev) => ({ ...prev, [name]: numbersOnly }));
+    }
+    else {
+      // For other fields like cardholderName, no specific validation
+      setCardDetails((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
   // Create a handler function that ensures the value is of the correct type
   const handlePaymentMethodChange = (value: string) => {
-    // Ensure the value is either "cash" or "bank" before setting the state
-    if (value === "cash" || value === "bank") {
+    // Ensure the value is either "cash", "bank", or "card" before setting the state
+    if (value === "cash" || value === "bank" || value === "card") {
       setPaymentMethod(value);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate card details if card payment method is selected
+    if (paymentMethod === "card") {
+      if (cardDetails.cardNumber.length !== 16) {
+        toast.error("Please enter a valid 16-digit card number");
+        return;
+      }
+      if (!cardDetails.cardholderName) {
+        toast.error("Please enter the cardholder name");
+        return;
+      }
+      if (!cardDetails.expiryMonth || !cardDetails.expiryYear) {
+        toast.error("Please enter a valid expiry date");
+        return;
+      }
+      if (!cardDetails.cvv || cardDetails.cvv.length < 3) {
+        toast.error("Please enter a valid CVV");
+        return;
+      }
+    }
     
     // Create a new order
     const newOrder = addOrder({
@@ -195,6 +256,10 @@ const Checkout = () => {
                           <RadioGroupItem value="bank" id="bank" />
                           <Label htmlFor="bank" className="cursor-pointer">Pay via Bank Transfer</Label>
                         </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="card" id="card" />
+                          <Label htmlFor="card" className="cursor-pointer">Pay with Credit Card</Label>
+                        </div>
                       </RadioGroup>
                       
                       {paymentMethod === "bank" && (
@@ -256,6 +321,101 @@ const Checkout = () => {
                               onChange={handleBankDetailsChange}
                               className="w-full"
                             />
+                          </div>
+                        </div>
+                      )}
+
+                      {paymentMethod === "card" && (
+                        <div className="mt-3 p-3 border border-gray-200 rounded-md bg-gray-50 space-y-3">
+                          <p className="text-sm font-medium text-gray-700">Enter Your Credit Card Details:</p>
+                          
+                          <div>
+                            <label htmlFor="cardNumber" className="block text-sm text-gray-600 mb-1">
+                              Card Number
+                            </label>
+                            <Input
+                              type="text"
+                              id="cardNumber"
+                              name="cardNumber"
+                              placeholder="1234 5678 9012 3456"
+                              value={cardDetails.cardNumber}
+                              onChange={handleCardDetailsChange}
+                              className="w-full"
+                              required={paymentMethod === "card"}
+                              maxLength={16}
+                            />
+                            {cardDetails.cardNumber && cardDetails.cardNumber.length !== 16 && (
+                              <p className="text-xs text-red-500 mt-1">Card number must be 16 digits</p>
+                            )}
+                          </div>
+                          
+                          <div>
+                            <label htmlFor="cardholderName" className="block text-sm text-gray-600 mb-1">
+                              Cardholder Name
+                            </label>
+                            <Input
+                              type="text"
+                              id="cardholderName"
+                              name="cardholderName"
+                              placeholder="John Doe"
+                              value={cardDetails.cardholderName}
+                              onChange={handleCardDetailsChange}
+                              className="w-full"
+                              required={paymentMethod === "card"}
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="col-span-1">
+                              <label htmlFor="expiryMonth" className="block text-sm text-gray-600 mb-1">
+                                Month (MM)
+                              </label>
+                              <Input
+                                type="text"
+                                id="expiryMonth"
+                                name="expiryMonth"
+                                placeholder="MM"
+                                value={cardDetails.expiryMonth}
+                                onChange={handleCardDetailsChange}
+                                className="w-full"
+                                required={paymentMethod === "card"}
+                                maxLength={2}
+                              />
+                            </div>
+                            
+                            <div className="col-span-1">
+                              <label htmlFor="expiryYear" className="block text-sm text-gray-600 mb-1">
+                                Year (YY)
+                              </label>
+                              <Input
+                                type="text"
+                                id="expiryYear"
+                                name="expiryYear"
+                                placeholder="YY"
+                                value={cardDetails.expiryYear}
+                                onChange={handleCardDetailsChange}
+                                className="w-full"
+                                required={paymentMethod === "card"}
+                                maxLength={2}
+                              />
+                            </div>
+                            
+                            <div className="col-span-1">
+                              <label htmlFor="cvv" className="block text-sm text-gray-600 mb-1">
+                                CVV
+                              </label>
+                              <Input
+                                type="text"
+                                id="cvv"
+                                name="cvv"
+                                placeholder="123"
+                                value={cardDetails.cvv}
+                                onChange={handleCardDetailsChange}
+                                className="w-full"
+                                required={paymentMethod === "card"}
+                                maxLength={4}
+                              />
+                            </div>
                           </div>
                         </div>
                       )}
