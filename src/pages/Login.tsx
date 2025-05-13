@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,16 @@ import { Lock } from "lucide-react";
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useAuthStore();
+  const { login, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/admin");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
