@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -57,8 +58,7 @@ import {
 } from "@/components/ui/tabs";
 import { useContentStore, WebsiteContent, WebsiteImages } from "@/store/contentStore";
 import { useAuthStore } from "@/store/authStore";
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { usePageContentStore } from "@/store/pageContentStore";
 
 // Form schema for product validation
 const productSchema = z.object({
@@ -95,66 +95,6 @@ type ProductFormValues = z.infer<typeof productSchema>;
 type ContentFormValues = z.infer<typeof contentSchema>;
 type PageContentFormValues = z.infer<typeof pageContentSchema>;
 
-// Page content store
-interface PageContent {
-  title: string;
-  content: string;
-}
-
-interface PageContentStore {
-  about: PageContent;
-  sustainability: PageContent;
-  careers: PageContent;
-  shipping: PageContent;
-  contact: PageContent;
-}
-
-// Initial page content
-const initialPageContent: PageContentStore = {
-  about: {
-    title: "Our Story",
-    content: "Founded in Marrakech, NajihKids blends Moroccan artisanal techniques with contemporary designs, creating unique children's clothing that celebrates heritage while embracing modern style."
-  },
-  sustainability: {
-    title: "Sustainability",
-    content: "At NajihKids, sustainability is at the heart of everything we do. We believe in creating clothing that not only looks good but does good for the planet and the people involved in making our products."
-  },
-  careers: {
-    title: "Join Our Team",
-    content: "We're always looking for passionate individuals to join our growing team. Check out our current openings below and become part of our story."
-  },
-  shipping: {
-    title: "Shipping & Returns",
-    content: "We offer free shipping on all orders over 500 MAD. Returns are accepted within 30 days of purchase. Please see our full policy for details."
-  },
-  contact: {
-    title: "Get in Touch",
-    content: "Have questions about our products? Contact us directly or use the form below."
-  }
-};
-
-// Create a store for page content
-const usePageContentStore = create<{
-  pages: PageContentStore;
-  updatePage: (page: keyof PageContentStore, content: PageContent) => void;
-}>()(
-  persist(
-    (set) => ({
-      pages: initialPageContent,
-      updatePage: (page, content) =>
-        set((state) => ({
-          pages: {
-            ...state.pages,
-            [page]: content
-          }
-        }))
-    }),
-    {
-      name: 'page-content-storage'
-    }
-  )
-);
-
 const Admin = () => {
   // Access global stores
   const { products, setProducts } = useProductStore();
@@ -169,7 +109,7 @@ const Admin = () => {
   
   const [currentTab, setCurrentTab] = useState<"products" | "orders" | "new" | "testimonials" | "content" | "messages" | "websiteContent" | "pageContent">("orders");
   const [editingProduct, setEditingProduct] = useState<typeof products[0] | null>(null);
-  const [currentPage, setCurrentPage] = useState<keyof PageContentStore>("about");
+  const [currentPage, setCurrentPage] = useState<keyof typeof pages>("about");
   const [orderStatusDialog, setOrderStatusDialog] = useState<{
     isOpen: boolean;
     orderId: number | null;
@@ -278,7 +218,7 @@ const Admin = () => {
   };
 
   // Handle page selection change
-  const handlePageChange = (page: keyof PageContentStore) => {
+  const handlePageChange = (page: keyof typeof pages) => {
     setCurrentPage(page);
     pageContentForm.reset({
       title: pages[page].title,
@@ -833,3 +773,639 @@ const Admin = () => {
                   </CardContent>
                 </Card>
               )}
+
+              {currentTab === "content" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Social Media Links</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleSocialLinksUpdate} className="space-y-4">
+                      <div>
+                        <Label htmlFor="facebook">Facebook URL</Label>
+                        <Input 
+                          id="facebook" 
+                          value={socialLinksForm.facebook} 
+                          onChange={(e) => setSocialLinksForm({...socialLinksForm, facebook: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="instagram">Instagram URL</Label>
+                        <Input 
+                          id="instagram" 
+                          value={socialLinksForm.instagram} 
+                          onChange={(e) => setSocialLinksForm({...socialLinksForm, instagram: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="twitter">Twitter URL</Label>
+                        <Input 
+                          id="twitter" 
+                          value={socialLinksForm.twitter} 
+                          onChange={(e) => setSocialLinksForm({...socialLinksForm, twitter: e.target.value})}
+                        />
+                      </div>
+                      <Button type="submit">Update Social Links</Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              )}
+
+              {currentTab === "new" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{editingProduct ? "Edit Product" : "Add New Product"}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Form {...productForm}>
+                      <form onSubmit={productForm.handleSubmit(onProductSubmit)} className="space-y-6">
+                        <FormField
+                          control={productForm.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Product Name</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <FormField
+                            control={productForm.control}
+                            name="price"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Price (MAD)</FormLabel>
+                                <FormControl>
+                                  <Input type="number" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={productForm.control}
+                            name="originalPrice"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Original Price (MAD, optional)</FormLabel>
+                                <FormControl>
+                                  <Input type="number" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <FormField
+                          control={productForm.control}
+                          name="category"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Category</FormLabel>
+                              <Select 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select category" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="baby">Baby</SelectItem>
+                                  <SelectItem value="boys">Boys</SelectItem>
+                                  <SelectItem value="girls">Girls</SelectItem>
+                                  <SelectItem value="accessories">Accessories</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={productForm.control}
+                          name="image"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Image URL</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <FormField
+                            control={productForm.control}
+                            name="rating"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Rating (1-5)</FormLabel>
+                                <Select 
+                                  onValueChange={(value) => field.onChange(parseInt(value))} 
+                                  defaultValue={String(field.value)}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select rating" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="1">1 Star</SelectItem>
+                                    <SelectItem value="2">2 Stars</SelectItem>
+                                    <SelectItem value="3">3 Stars</SelectItem>
+                                    <SelectItem value="4">4 Stars</SelectItem>
+                                    <SelectItem value="5">5 Stars</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={productForm.control}
+                            name="isNew"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border rounded-md">
+                                <FormControl>
+                                  <input
+                                    type="checkbox"
+                                    checked={field.value}
+                                    onChange={field.onChange}
+                                    className="h-4 w-4 mt-1"
+                                  />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel>Mark as New</FormLabel>
+                                </div>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={productForm.control}
+                            name="isSale"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border rounded-md">
+                                <FormControl>
+                                  <input
+                                    type="checkbox"
+                                    checked={field.value}
+                                    onChange={field.onChange}
+                                    className="h-4 w-4 mt-1"
+                                  />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel>Mark as Sale</FormLabel>
+                                </div>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button type="submit">
+                            {editingProduct ? "Update Product" : "Add Product"}
+                          </Button>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => {
+                              productForm.reset();
+                              setEditingProduct(null);
+                              setCurrentTab("products");
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+              )}
+
+              {currentTab === "websiteContent" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Website Content</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs defaultValue="text">
+                      <TabsList className="mb-4">
+                        <TabsTrigger value="text">Text Content</TabsTrigger>
+                        <TabsTrigger value="images">Images</TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="text">
+                        <Form {...contentForm}>
+                          <form onSubmit={contentForm.handleSubmit(onContentSubmit)} className="space-y-6">
+                            <div className="border-b pb-4 mb-4">
+                              <h3 className="text-lg font-medium mb-2">Hero Section</h3>
+                              <div className="grid gap-4">
+                                <FormField
+                                  control={contentForm.control}
+                                  name="heroTitle"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Hero Title</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={contentForm.control}
+                                  name="heroSubtitle"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Hero Subtitle</FormLabel>
+                                      <FormControl>
+                                        <Textarea {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={contentForm.control}
+                                  name="heroButtonText"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Button Text</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="border-b pb-4 mb-4">
+                              <h3 className="text-lg font-medium mb-2">About Section</h3>
+                              <div className="grid gap-4">
+                                <FormField
+                                  control={contentForm.control}
+                                  name="aboutTitle"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>About Title</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={contentForm.control}
+                                  name="aboutDescription"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>About Description</FormLabel>
+                                      <FormControl>
+                                        <Textarea {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="border-b pb-4 mb-4">
+                              <h3 className="text-lg font-medium mb-2">Other Sections</h3>
+                              <div className="grid gap-4">
+                                <FormField
+                                  control={contentForm.control}
+                                  name="featuredTitle"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Featured Products Title</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={contentForm.control}
+                                  name="contactTitle"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Contact Section Title</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={contentForm.control}
+                                  name="contactSubtitle"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Contact Section Subtitle</FormLabel>
+                                      <FormControl>
+                                        <Textarea {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={contentForm.control}
+                                  name="footerText"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Footer Text</FormLabel>
+                                      <FormControl>
+                                        <Input {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                            </div>
+                            
+                            <Button type="submit">Save Website Content</Button>
+                          </form>
+                        </Form>
+                      </TabsContent>
+                      
+                      <TabsContent value="images">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Hero Image */}
+                          <Card>
+                            <CardHeader className="pb-3">
+                              <CardTitle className="text-lg">Hero Image</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-4">
+                                <img 
+                                  src={images.heroImage} 
+                                  alt="Hero" 
+                                  className="w-full h-40 object-cover rounded-md"
+                                />
+                                <Button 
+                                  className="w-full" 
+                                  variant="outline"
+                                  onClick={() => handleImageUpload('heroImage')}
+                                >
+                                  <Upload className="mr-2 h-4 w-4" />
+                                  Change Hero Image
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          
+                          {/* About Image */}
+                          <Card>
+                            <CardHeader className="pb-3">
+                              <CardTitle className="text-lg">About Image</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-4">
+                                <img 
+                                  src={images.aboutImage} 
+                                  alt="About" 
+                                  className="w-full h-40 object-cover rounded-md"
+                                />
+                                <Button 
+                                  className="w-full" 
+                                  variant="outline"
+                                  onClick={() => handleImageUpload('aboutImage')}
+                                >
+                                  <Upload className="mr-2 h-4 w-4" />
+                                  Change About Image
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          
+                          {/* Banner Image */}
+                          <Card className="md:col-span-2">
+                            <CardHeader className="pb-3">
+                              <CardTitle className="text-lg">Banner Image</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-4">
+                                <img 
+                                  src={images.bannerImage} 
+                                  alt="Banner" 
+                                  className="w-full h-40 object-cover rounded-md"
+                                />
+                                <Button 
+                                  className="w-full" 
+                                  variant="outline"
+                                  onClick={() => handleImageUpload('bannerImage')}
+                                >
+                                  <Upload className="mr-2 h-4 w-4" />
+                                  Change Banner Image
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+              )}
+
+              {currentTab === "pageContent" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Page Content Management</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 gap-6">
+                      <div>
+                        <Label htmlFor="page-select">Select Page</Label>
+                        <Select 
+                          defaultValue={currentPage}
+                          onValueChange={(value) => handlePageChange(value as keyof typeof pages)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select page" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="about">About Us</SelectItem>
+                            <SelectItem value="sustainability">Sustainability</SelectItem>
+                            <SelectItem value="careers">Careers</SelectItem>
+                            <SelectItem value="shipping">Shipping & Returns</SelectItem>
+                            <SelectItem value="contact">Contact</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <Form {...pageContentForm}>
+                        <form onSubmit={pageContentForm.handleSubmit(onPageContentSubmit)} className="space-y-6">
+                          <FormField
+                            control={pageContentForm.control}
+                            name="title"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Page Title</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={pageContentForm.control}
+                            name="content"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Page Content</FormLabel>
+                                <FormControl>
+                                  <Textarea className="min-h-[200px]" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                <p className="text-sm text-gray-500">
+                                  You can use HTML tags to format your content (e.g., &lt;p&gt;, &lt;h2&gt;, &lt;strong&gt;, &lt;em&gt;, etc.)
+                                </p>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <Button type="submit">Save Page Content</Button>
+                        </form>
+                      </Form>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+      
+      <Footer />
+      
+      {/* Order Status Dialog */}
+      <Dialog open={orderStatusDialog.isOpen} onOpenChange={(open) => !open && setOrderStatusDialog(prev => ({ ...prev, isOpen: false }))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Order Status</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="status">Select Status</Label>
+              <Select 
+                value={orderStatusDialog.status} 
+                onValueChange={(value) => setOrderStatusDialog(prev => ({ ...prev, status: value as Order['status'] }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="processing">Processing</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOrderStatusDialog({ isOpen: false, orderId: null, status: "pending" })}>Cancel</Button>
+            <Button onClick={handleUpdateOrderStatus}>Update Status</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* View Message Dialog */}
+      <Dialog open={messageViewDialog.isOpen} onOpenChange={(open) => !open && setMessageViewDialog(prev => ({ ...prev, isOpen: false }))}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Message from {messageViewDialog.message?.name}</DialogTitle>
+            <DialogDescription>
+              Received on {messageViewDialog.message?.date}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <p className="text-sm font-medium">From:</p>
+              <p>{messageViewDialog.message?.name} ({messageViewDialog.message?.email})</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium">Subject:</p>
+              <p>{messageViewDialog.message?.subject}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium">Message:</p>
+              <p className="whitespace-pre-wrap">{messageViewDialog.message?.message}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setMessageViewDialog({ isOpen: false, message: null })}
+            >
+              Close
+            </Button>
+            {messageViewDialog.message && (
+              <Button 
+                onClick={() => window.location.href = `mailto:${messageViewDialog.message?.email}`}
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                Reply via Email
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Image Upload Dialog */}
+      <Dialog open={imageUploadDialog.isOpen} onOpenChange={(open) => !open && setImageUploadDialog(prev => ({ ...prev, isOpen: false }))}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update {imageUploadDialog.imageType} Image</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleImageUrlUpdate} className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="imageUrl">Image URL</Label>
+              <Input id="imageUrl" name="imageUrl" placeholder="https://example.com/image.jpg" required />
+              <p className="text-sm text-gray-500 mt-1">
+                Enter a URL for the new image or upload to an image hosting service first
+              </p>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setImageUploadDialog({ isOpen: false, imageType: null })}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                <Image className="mr-2 h-4 w-4" />
+                Update Image
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default Admin;
