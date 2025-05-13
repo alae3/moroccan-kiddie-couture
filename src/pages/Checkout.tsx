@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useOrderStore } from "@/store/orderStore";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 const Checkout = () => {
   const { items, getTotal, clearCart } = useCartStore();
@@ -23,10 +24,22 @@ const Checkout = () => {
     phone: "",
   });
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank">("cash");
+  const [bankDetails, setBankDetails] = useState({
+    bankName: "",
+    accountNumber: "",
+    accountHolder: "",
+    reference: "",
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Handle bank details inputs
+  const handleBankDetailsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setBankDetails((prev) => ({ ...prev, [name]: value }));
   };
 
   // Create a handler function that ensures the value is of the correct type
@@ -185,15 +198,65 @@ const Checkout = () => {
                       </RadioGroup>
                       
                       {paymentMethod === "bank" && (
-                        <div className="mt-3 p-3 border border-gray-200 rounded-md bg-gray-50">
-                          <p className="text-sm text-gray-600 mb-2">Bank Transfer Details:</p>
-                          <ul className="text-sm text-gray-600 space-y-1">
-                            <li><span className="font-medium">Bank Name:</span> Morocco National Bank</li>
-                            <li><span className="font-medium">Account Number:</span> 123-456-7890</li>
-                            <li><span className="font-medium">Account Holder:</span> NajihKids</li>
-                            <li><span className="font-medium">Reference:</span> Your Order Number</li>
-                          </ul>
-                          <p className="text-xs text-gray-500 mt-2">Please include your order number in the transfer reference</p>
+                        <div className="mt-3 p-3 border border-gray-200 rounded-md bg-gray-50 space-y-3">
+                          <p className="text-sm font-medium text-gray-700">Enter Your Bank Transfer Details:</p>
+                          
+                          <div>
+                            <label htmlFor="bankName" className="block text-sm text-gray-600 mb-1">
+                              Bank Name
+                            </label>
+                            <Input
+                              type="text"
+                              id="bankName"
+                              name="bankName"
+                              value={bankDetails.bankName}
+                              onChange={handleBankDetailsChange}
+                              className="w-full"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label htmlFor="accountNumber" className="block text-sm text-gray-600 mb-1">
+                              Account Number
+                            </label>
+                            <Input
+                              type="text"
+                              id="accountNumber"
+                              name="accountNumber"
+                              value={bankDetails.accountNumber}
+                              onChange={handleBankDetailsChange}
+                              className="w-full"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label htmlFor="accountHolder" className="block text-sm text-gray-600 mb-1">
+                              Account Holder Name
+                            </label>
+                            <Input
+                              type="text"
+                              id="accountHolder"
+                              name="accountHolder"
+                              value={bankDetails.accountHolder}
+                              onChange={handleBankDetailsChange}
+                              className="w-full"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label htmlFor="reference" className="block text-sm text-gray-600 mb-1">
+                              Payment Reference
+                            </label>
+                            <Input
+                              type="text"
+                              id="reference"
+                              name="reference"
+                              placeholder="e.g., Your Name/Order ID"
+                              value={bankDetails.reference}
+                              onChange={handleBankDetailsChange}
+                              className="w-full"
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
