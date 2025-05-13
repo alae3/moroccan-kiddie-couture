@@ -22,7 +22,7 @@ const Checkout = () => {
     zipCode: "",
     phone: "",
   });
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank">("cash");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
