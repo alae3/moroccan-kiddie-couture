@@ -29,6 +29,14 @@ const Checkout = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Create a handler function that ensures the value is of the correct type
+  const handlePaymentMethodChange = (value: string) => {
+    // Ensure the value is either "cash" or "bank" before setting the state
+    if (value === "cash" || value === "bank") {
+      setPaymentMethod(value);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -165,7 +173,7 @@ const Checkout = () => {
                     {/* Payment Method Selection */}
                     <div className="mt-6">
                       <h3 className="text-lg font-medium mb-3">Payment Method</h3>
-                      <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
+                      <RadioGroup value={paymentMethod} onValueChange={handlePaymentMethodChange} className="space-y-3">
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="cash" id="cash" />
                           <Label htmlFor="cash" className="cursor-pointer">Cash on Delivery</Label>
