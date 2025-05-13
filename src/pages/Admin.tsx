@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -59,6 +58,7 @@ import {
 import { useContentStore, WebsiteContent, WebsiteImages } from "@/store/contentStore";
 import { useAuthStore } from "@/store/authStore";
 import { usePageContentStore } from "@/store/pageContentStore";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 // Form schema for product validation
 const productSchema = z.object({
@@ -110,6 +110,9 @@ const Admin = () => {
   const [currentTab, setCurrentTab] = useState<"products" | "orders" | "new" | "testimonials" | "content" | "messages" | "websiteContent" | "pageContent">("orders");
   const [editingProduct, setEditingProduct] = useState<typeof products[0] | null>(null);
   const [currentPage, setCurrentPage] = useState<keyof typeof pages>("about");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  
   const [orderStatusDialog, setOrderStatusDialog] = useState<{
     isOpen: boolean;
     orderId: number | null;
@@ -206,6 +209,10 @@ const Admin = () => {
   const onContentSubmit = (data: ContentFormValues) => {
     updateTextContent(data);
     toast.success("Website content updated successfully!");
+    // Force page reload to see changes immediately
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   };
 
   // Handle page content submission
@@ -215,6 +222,10 @@ const Admin = () => {
       content: data.content
     });
     toast.success(`${currentPage.charAt(0).toUpperCase() + currentPage.slice(1)} page updated successfully!`);
+    // Force page reload to see changes immediately
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   };
 
   // Handle page selection change
@@ -312,24 +323,67 @@ const Admin = () => {
     toast.success("Social media links updated successfully!");
   };
 
-  // Handle image upload
+  // Handle image upload dialog
   const handleImageUpload = (imageType: keyof WebsiteImages) => {
+    setImageFile(null);
+    setImagePreview(null);
     setImageUploadDialog({
       isOpen: true,
       imageType
     });
   };
 
-  // Process image URL update
-  const handleImageUrlUpdate = (e: React.FormEvent) => {
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Process image upload
+  const handleImageSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const imageUrl = (form.elements.namedItem('imageUrl') as HTMLInputElement).value;
     
-    if (imageUploadDialog.imageType && imageUrl) {
-      updateImage(imageUploadDialog.imageType, imageUrl);
-      toast.success(`${imageUploadDialog.imageType} image updated successfully!`);
-      setImageUploadDialog({ isOpen: false, imageType: null });
+    if (imageFile && imageUploadDialog.imageType) {
+      // Convert file to base64 for storage
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        updateImage(imageUploadDialog.imageType!, base64String);
+        toast.success(`${imageUploadDialog.imageType} image updated successfully!`);
+        setImageUploadDialog({ isOpen: false, imageType: null });
+        
+        // Force page reload to see changes immediately
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      };
+      reader.readAsDataURL(imageFile);
+    } else if (!imageFile && imageUploadDialog.imageType) {
+      // If no file but URL is provided
+      const form = e.target as HTMLFormElement;
+      const imageUrl = (form.elements.namedItem('imageUrl') as HTMLInputElement).value;
+      
+      if (imageUrl) {
+        updateImage(imageUploadDialog.imageType, imageUrl);
+        toast.success(`${imageUploadDialog.imageType} image updated successfully!`);
+        setImageUploadDialog({ isOpen: false, imageType: null });
+        
+        // Force page reload to see changes immediately
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        toast.error("Please provide an image file or URL");
+      }
     }
   };
 
@@ -1160,11 +1214,13 @@ const Admin = () => {
                             </CardHeader>
                             <CardContent>
                               <div className="space-y-4">
-                                <img 
-                                  src={images.heroImage} 
-                                  alt="Hero" 
-                                  className="w-full h-40 object-cover rounded-md"
-                                />
+                                <AspectRatio ratio={16/9} className="bg-muted">
+                                  <img 
+                                    src={images.heroImage} 
+                                    alt="Hero" 
+                                    className="rounded-md object-cover w-full h-full"
+                                  />
+                                </AspectRatio>
                                 <Button 
                                   className="w-full" 
                                   variant="outline"
@@ -1184,11 +1240,13 @@ const Admin = () => {
                             </CardHeader>
                             <CardContent>
                               <div className="space-y-4">
-                                <img 
-                                  src={images.aboutImage} 
-                                  alt="About" 
-                                  className="w-full h-40 object-cover rounded-md"
-                                />
+                                <AspectRatio ratio={16/9} className="bg-muted">
+                                  <img 
+                                    src={images.aboutImage} 
+                                    alt="About" 
+                                    className="rounded-md object-cover w-full h-full"
+                                  />
+                                </AspectRatio>
                                 <Button 
                                   className="w-full" 
                                   variant="outline"
@@ -1208,11 +1266,13 @@ const Admin = () => {
                             </CardHeader>
                             <CardContent>
                               <div className="space-y-4">
-                                <img 
-                                  src={images.bannerImage} 
-                                  alt="Banner" 
-                                  className="w-full h-40 object-cover rounded-md"
-                                />
+                                <AspectRatio ratio={21/9} className="bg-muted">
+                                  <img 
+                                    src={images.bannerImage} 
+                                    alt="Banner" 
+                                    className="rounded-md object-cover w-full h-full"
+                                  />
+                                </AspectRatio>
                                 <Button 
                                   className="w-full" 
                                   variant="outline"
@@ -1384,14 +1444,52 @@ const Admin = () => {
           <DialogHeader>
             <DialogTitle>Update {imageUploadDialog.imageType} Image</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleImageUrlUpdate} className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="imageUrl">Image URL</Label>
-              <Input id="imageUrl" name="imageUrl" placeholder="https://example.com/image.jpg" required />
-              <p className="text-sm text-gray-500 mt-1">
-                Enter a URL for the new image or upload to an image hosting service first
-              </p>
+          <form onSubmit={handleImageSubmit} className="space-y-4 py-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="image-upload">Upload Image</Label>
+                <Input 
+                  id="image-upload" 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleFileChange}
+                  className="mt-1"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Select an image file to upload
+                </p>
+              </div>
+              
+              {imagePreview && (
+                <div>
+                  <Label>Image Preview</Label>
+                  <div className="mt-2 border rounded-md overflow-hidden">
+                    <AspectRatio ratio={16/9}>
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="w-full h-full object-contain"
+                      />
+                    </AspectRatio>
+                  </div>
+                </div>
+              )}
+              
+              <div className="pt-4 border-t">
+                <Label htmlFor="imageUrl">Or Enter Image URL</Label>
+                <Input 
+                  id="imageUrl" 
+                  name="imageUrl" 
+                  placeholder="https://example.com/image.jpg" 
+                  className="mt-1"
+                  disabled={!!imageFile}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Alternatively, enter a URL for the image
+                </p>
+              </div>
             </div>
+            
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setImageUploadDialog({ isOpen: false, imageType: null })}>
                 Cancel
